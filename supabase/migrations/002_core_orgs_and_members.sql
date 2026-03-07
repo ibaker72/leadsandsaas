@@ -3,7 +3,7 @@
 -- ============================================================================
 
 CREATE TABLE public.organizations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
   vertical public.vertical_type NOT NULL DEFAULT 'general',
@@ -22,7 +22,7 @@ CREATE INDEX idx_orgs_slug ON public.organizations(slug);
 CREATE INDEX idx_orgs_stripe ON public.organizations(stripe_customer_id);
 
 CREATE TABLE public.organization_members (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   role public.member_role NOT NULL DEFAULT 'viewer',

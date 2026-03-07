@@ -3,7 +3,7 @@
 -- ============================================================================
 
 CREATE TABLE public.leads (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   agent_id UUID REFERENCES public.agents(id) ON DELETE SET NULL,
   first_name TEXT, last_name TEXT, email TEXT, phone TEXT, phone_e164 TEXT,
@@ -28,7 +28,7 @@ ALTER TABLE public.workflow_executions
   ADD CONSTRAINT fk_wf_lead FOREIGN KEY (lead_id) REFERENCES public.leads(id) ON DELETE CASCADE;
 
 CREATE TABLE public.conversations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   lead_id UUID NOT NULL REFERENCES public.leads(id) ON DELETE CASCADE,
   agent_id UUID REFERENCES public.agents(id) ON DELETE SET NULL,
@@ -44,7 +44,7 @@ CREATE TABLE public.conversations (
 CREATE INDEX idx_convos_org ON public.conversations(org_id, is_active, last_message_at DESC);
 
 CREATE TABLE public.messages (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   conversation_id UUID NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
   lead_id UUID NOT NULL REFERENCES public.leads(id) ON DELETE CASCADE,
@@ -59,7 +59,7 @@ CREATE INDEX idx_msgs_convo ON public.messages(conversation_id, created_at);
 CREATE INDEX idx_msgs_external ON public.messages(external_id);
 
 CREATE TABLE public.appointments (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   lead_id UUID NOT NULL REFERENCES public.leads(id) ON DELETE CASCADE,
   agent_id UUID REFERENCES public.agents(id),
@@ -76,7 +76,7 @@ CREATE TABLE public.appointments (
 CREATE INDEX idx_appts_time ON public.appointments(org_id, starts_at);
 
 CREATE TABLE public.pipeline_stages (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   name TEXT NOT NULL, description TEXT, position INT NOT NULL, color TEXT DEFAULT '#6366f1',
   is_win_stage BOOLEAN NOT NULL DEFAULT false, is_loss_stage BOOLEAN NOT NULL DEFAULT false,
@@ -86,7 +86,7 @@ CREATE TABLE public.pipeline_stages (
 );
 
 CREATE TABLE public.lead_pipeline_entries (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   lead_id UUID NOT NULL REFERENCES public.leads(id) ON DELETE CASCADE UNIQUE,
   stage_id UUID NOT NULL REFERENCES public.pipeline_stages(id) ON DELETE CASCADE,
@@ -94,7 +94,7 @@ CREATE TABLE public.lead_pipeline_entries (
 );
 
 CREATE TABLE public.pipeline_transitions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   lead_id UUID NOT NULL REFERENCES public.leads(id) ON DELETE CASCADE,
   from_stage_id UUID REFERENCES public.pipeline_stages(id),

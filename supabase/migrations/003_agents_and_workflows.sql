@@ -3,7 +3,7 @@
 -- ============================================================================
 
 CREATE TABLE public.agents (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   name TEXT NOT NULL, description TEXT,
   vertical public.vertical_type NOT NULL DEFAULT 'general',
@@ -20,7 +20,7 @@ CREATE TABLE public.agents (
 CREATE INDEX idx_agents_org ON public.agents(org_id, status);
 
 CREATE TABLE public.agent_knowledge_base (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_id UUID NOT NULL REFERENCES public.agents(id) ON DELETE CASCADE,
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   title TEXT NOT NULL, content TEXT NOT NULL, content_type TEXT NOT NULL DEFAULT 'text',
@@ -29,7 +29,7 @@ CREATE TABLE public.agent_knowledge_base (
 );
 
 CREATE TABLE public.agent_templates (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   vertical public.vertical_type NOT NULL, name TEXT NOT NULL, description TEXT,
   system_prompt TEXT NOT NULL, personality JSONB NOT NULL, rules JSONB NOT NULL,
   sample_knowledge JSONB DEFAULT '[]', is_public BOOLEAN NOT NULL DEFAULT true,
@@ -37,7 +37,7 @@ CREATE TABLE public.agent_templates (
 );
 
 CREATE TABLE public.workflow_sequences (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_id UUID NOT NULL REFERENCES public.agents(id) ON DELETE CASCADE,
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   name TEXT NOT NULL, trigger_event TEXT NOT NULL, is_active BOOLEAN NOT NULL DEFAULT true,
@@ -46,7 +46,7 @@ CREATE TABLE public.workflow_sequences (
 );
 
 CREATE TABLE public.workflow_executions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workflow_id UUID REFERENCES public.workflow_sequences(id) ON DELETE CASCADE,
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   lead_id UUID NOT NULL,

@@ -3,7 +3,7 @@
 -- ============================================================================
 
 CREATE TABLE public.domain_events (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE,
   event_type TEXT NOT NULL, aggregate_type TEXT NOT NULL, aggregate_id UUID NOT NULL,
   payload JSONB NOT NULL, status public.event_status NOT NULL DEFAULT 'pending',
@@ -14,7 +14,7 @@ CREATE TABLE public.domain_events (
 CREATE INDEX idx_events_pending ON public.domain_events(status, created_at) WHERE status IN ('pending','failed');
 
 CREATE TABLE public.usage_records (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   period_start DATE NOT NULL, period_end DATE NOT NULL,
   conversations_count INT NOT NULL DEFAULT 0, messages_inbound INT NOT NULL DEFAULT 0, messages_outbound INT NOT NULL DEFAULT 0,
@@ -26,7 +26,7 @@ CREATE TABLE public.usage_records (
 );
 
 CREATE TABLE public.usage_daily (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   date DATE NOT NULL,
   conversations INT NOT NULL DEFAULT 0, messages INT NOT NULL DEFAULT 0,
@@ -37,7 +37,7 @@ CREATE TABLE public.usage_daily (
 );
 
 CREATE TABLE public.audit_log (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID REFERENCES public.organizations(id),
   user_id UUID REFERENCES auth.users(id),
   actor_type TEXT NOT NULL, action TEXT NOT NULL, resource_type TEXT NOT NULL, resource_id UUID,
@@ -46,14 +46,14 @@ CREATE TABLE public.audit_log (
 );
 
 CREATE TABLE public.webhook_endpoints (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   url TEXT NOT NULL, secret TEXT NOT NULL, events TEXT[] NOT NULL, is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE public.webhook_deliveries (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   endpoint_id UUID NOT NULL REFERENCES public.webhook_endpoints(id) ON DELETE CASCADE,
   event_id UUID REFERENCES public.domain_events(id),
@@ -64,7 +64,7 @@ CREATE TABLE public.webhook_deliveries (
 );
 
 CREATE TABLE public.notifications (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   org_id UUID REFERENCES public.organizations(id),
   type TEXT NOT NULL, title TEXT NOT NULL, body TEXT,
