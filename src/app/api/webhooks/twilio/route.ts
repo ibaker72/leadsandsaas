@@ -5,6 +5,17 @@ import { ActionExecutor } from '@/lib/ai/executor';
 import { DomainEventEmitter } from '@/lib/events/emitter';
 import { verifyTwilioSignature } from '@/lib/comms/verify';
 
+function getStringField(value: unknown, key: string): string | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = (value as Record<string, unknown>)[key];
+  return typeof candidate === 'string' ? candidate : null;
+}
+
+function getBooleanField(value: unknown, key: string): boolean {
+  if (!value || typeof value !== 'object') return false;
+  return (value as Record<string, unknown>)[key] === true;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text();
@@ -21,37 +32,45 @@ export async function POST(req: NextRequest) {
     const db = createAdminSupabase();
     const { data: agent } = await db.from('agents').select('*, organizations(*)').eq('status', 'active').contains('channels', { sms: { twilio_number: to } }).single();
     if (!agent) return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
+    const agentId = getStringField(agent, 'id');
+    if (!agentId) return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
 
     const org = (agent as any).organizations;
-    const orgId = org.id;
+    const orgId = getStringField(org, 'id');
+    if (!orgId) return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
 
     // Find or create lead
     let { data: lead } = await db.from('leads').select('*').eq('phone_e164', from).eq('org_id', orgId).maybeSingle();
-    if (!lead) {
-      const { data: newLead } = await db.from('leads').insert({ org_id: orgId, agent_id: agent.id, phone: from, phone_e164: from, source: 'sms_inbound', sms_consent: true, sms_consent_at: new Date().toISOString() }).select().single();
+    let leadId = getStringField(lead, 'id');
+    if (!lead || !leadId) {
+      const { data: newLead } = await db.from('leads').insert({ org_id: orgId, agent_id: agentId, phone: from, phone_e164: from, source: 'sms_inbound', sms_consent: true, sms_consent_at: new Date().toISOString() }).select().single();
       lead = newLead;
-      await new DomainEventEmitter(db).emit('lead.created', 'lead', lead!.id, { source: 'sms_inbound' }, orgId);
+      leadId = getStringField(lead, 'id');
+      if (!leadId) return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
+      await new DomainEventEmitter(db).emit('lead.created', 'lead', leadId, { source: 'sms_inbound' }, orgId);
     }
-    if (!lead || lead.opted_out) return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
+    if (!lead || !leadId || getBooleanField(lead, 'opted_out')) return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
     if (['stop','unsubscribe','cancel','quit'].includes(msgBody.toLowerCase())) {
-      await db.from('leads').update({ opted_out: true, opted_out_at: new Date().toISOString() }).eq('id', lead.id);
+      await db.from('leads').update({ opted_out: true, opted_out_at: new Date().toISOString() }).eq('id', leadId);
       return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
     }
 
     // Find or create conversation
-    let { data: convo } = await db.from('conversations').select('*').eq('lead_id', lead.id).eq('agent_id', agent.id).eq('channel', 'sms').eq('is_active', true).order('created_at', { ascending: false }).limit(1).maybeSingle();
-    if (!convo) { const { data: nc } = await db.from('conversations').insert({ org_id: orgId, lead_id: lead.id, agent_id: agent.id, channel: 'sms' }).select().single(); convo = nc; }
+    let { data: convo } = await db.from('conversations').select('*').eq('lead_id', leadId).eq('agent_id', agentId).eq('channel', 'sms').eq('is_active', true).order('created_at', { ascending: false }).limit(1).maybeSingle();
+    if (!convo) { const { data: nc } = await db.from('conversations').insert({ org_id: orgId, lead_id: leadId, agent_id: agentId, channel: 'sms' }).select().single(); convo = nc; }
+    const convoId = getStringField(convo, 'id');
+    if (!convoId) return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
 
     // Record inbound
-    await db.from('messages').insert({ org_id: orgId, conversation_id: convo!.id, lead_id: lead.id, direction: 'inbound', sender_type: 'lead', channel: 'sms', body: msgBody, status: 'delivered', external_id: msgSid });
-    if (convo!.is_human_takeover) return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
+    await db.from('messages').insert({ org_id: orgId, conversation_id: convoId, lead_id: leadId, direction: 'inbound', sender_type: 'lead', channel: 'sms', body: msgBody, status: 'delivered', external_id: msgSid });
+    if (getBooleanField(convo, 'is_human_takeover')) return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
 
     // Load context & run AI
     const [msgs, kb, stages, entry] = await Promise.all([
-      db.from('messages').select('*').eq('conversation_id', convo!.id).order('created_at', { ascending: true }).limit(20).then(r => r.data ?? []),
-      db.from('agent_knowledge_base').select('*').eq('agent_id', agent.id).eq('is_active', true).then(r => r.data ?? []),
+      db.from('messages').select('*').eq('conversation_id', convoId).order('created_at', { ascending: true }).limit(20).then(r => r.data ?? []),
+      db.from('agent_knowledge_base').select('*').eq('agent_id', agentId).eq('is_active', true).then(r => r.data ?? []),
       db.from('pipeline_stages').select('*').eq('org_id', orgId).order('position', { ascending: true }).then(r => r.data ?? []),
-      db.from('lead_pipeline_entries').select('*, pipeline_stages(*)').eq('lead_id', lead.id).maybeSingle().then(r => r.data),
+      db.from('lead_pipeline_entries').select('*, pipeline_stages(*)').eq('lead_id', leadId).maybeSingle().then(r => r.data),
     ]);
 
     const ctx: AgentContext = { organization: org, agent: agent as any, lead: lead as any, conversation: convo as any, recentMessages: msgs as any, knowledgeBase: kb as any, pipelineStages: stages as any, currentStage: (entry as any)?.pipeline_stages ?? null };
