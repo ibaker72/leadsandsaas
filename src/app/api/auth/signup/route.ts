@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
+function getStringField(value: unknown, key: string): string | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = (value as Record<string, unknown>)[key];
+  return typeof candidate === 'string' ? candidate : null;
+}
+
 /**
  * Server-side signup bootstrap.
  *
@@ -93,12 +99,16 @@ export async function POST(req: NextRequest) {
       console.error('Org creation failed:', orgError);
       return NextResponse.json({ error: 'Failed to create organization' }, { status: 500 });
     }
+    const orgId = getStringField(org, 'id');
+    if (!orgId) {
+      return NextResponse.json({ error: 'Failed to create organization' }, { status: 500 });
+    }
 
     // 6. Create membership
     const { error: memberError } = await admin
       .from('organization_members')
       .insert({
-        org_id: org.id,
+        org_id: orgId,
         user_id: user.id,
         role: 'owner',
         is_active: true,
@@ -106,7 +116,7 @@ export async function POST(req: NextRequest) {
 
     if (memberError) {
       // Rollback: delete the org
-      await admin.from('organizations').delete().eq('id', org.id);
+      await admin.from('organizations').delete().eq('id', orgId);
       console.error('Membership creation failed:', memberError);
       return NextResponse.json({ error: 'Failed to create membership' }, { status: 500 });
     }
@@ -120,13 +130,13 @@ export async function POST(req: NextRequest) {
       });
 
     // 8. Create default pipeline stages
-    await admin.rpc('create_default_pipeline', { p_org_id: org.id });
+    await (admin as any).rpc('create_default_pipeline', { p_org_id: orgId });
 
     // 9. Set JWT claim via admin auth API
     // This is the safe way to update app_metadata — no SECURITY DEFINER needed
     const { error: claimError } = await admin.auth.admin.updateUserById(user.id, {
       app_metadata: {
-        org_id: org.id,
+        org_id: orgId,
         role: 'owner',
       },
     });
@@ -139,7 +149,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      org_id: org.id,
+      org_id: orgId,
       slug,
     });
   } catch (err) {

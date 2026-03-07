@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { createAdminSupabase } from '@/lib/db/supabase';
+import { createAdminClient as createAdminSupabase } from '@/lib/supabase/admin';
 import { Ok, type Result, tryCatch } from '@/lib/errors';
 import { AppError } from '@/lib/errors';
 import type { OrgPlan } from '@/lib/types/domain';
