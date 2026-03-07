@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyResendSignature } from '@/lib/comms/verify';
-import { createAdminSupabase } from '@/lib/db/supabase';
+import { createAdminClient as createAdminSupabase } from '@/lib/supabase/admin';
 
 export async function POST(req: NextRequest) {
   const body = await req.text();

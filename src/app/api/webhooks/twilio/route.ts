@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminSupabase } from '@/lib/db/supabase';
+import { createAdminClient as createAdminSupabase } from '@/lib/supabase/admin';
 import { getAgentEngine, type AgentContext } from '@/lib/ai/engine';
 import { ActionExecutor } from '@/lib/ai/executor';
 import { DomainEventEmitter } from '@/lib/events/emitter';

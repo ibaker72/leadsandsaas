@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminSupabase } from '@/lib/db/supabase';
+import { createAdminClient as createAdminSupabase } from '@/lib/supabase/admin';
 import { DomainEventEmitter } from '@/lib/events/emitter';
 import { z } from 'zod';
 
