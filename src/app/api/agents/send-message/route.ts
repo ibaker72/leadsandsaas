@@ -1,23 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminSupabase } from '@/lib/db/supabase';
+import { createAdminClient as createAdminSupabase, verifyInternalAuth } from '@/lib/supabase/admin';
 import { getChannelAdapter } from '@/lib/comms/channels';
 import type { ChannelType, MessageSenderType } from '@/lib/types/domain';
 
-type LeadContactRow = {
-  phone_e164: string | null;
-  email: string | null;
-  opted_out: boolean | null;
-  sms_consent: boolean | null;
-  email_consent: boolean | null;
-};
-
 export async function POST(req: NextRequest) {
-  if (req.headers.get('authorization') !== `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!verifyInternalAuth(req.headers.get('authorization'))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const { org_id, lead_id, conversation_id, channel, message, subject, sender_type = 'system', agent_id } = await req.json();
     const db = createAdminSupabase();
-    const { data } = await db.from('leads').select('phone_e164, email, opted_out, sms_consent, email_consent').eq('id', lead_id).single();
-    const lead = data as LeadContactRow | null;
+    const { data: lead } = await db.from('leads').select('phone_e164, email, opted_out, sms_consent, email_consent').eq('id', lead_id).single();
     if (!lead || lead.opted_out) return NextResponse.json({ error: 'Unavailable' }, { status: 400 });
     if (channel === 'sms' && !lead.sms_consent) return NextResponse.json({ error: 'No SMS consent' }, { status: 400 });
 
@@ -27,21 +18,7 @@ export async function POST(req: NextRequest) {
     const result = await adapter.send({ to, from: fromAddr, body: message, subject });
     if (!result.ok) return NextResponse.json({ error: result.error.message }, { status: 502 });
 
-    if (conversation_id) {
-      await (db.from('messages') as any).insert({
-        org_id,
-        conversation_id,
-        lead_id,
-        direction: 'outbound',
-        sender_type: sender_type as MessageSenderType,
-        sender_id: agent_id,
-        channel,
-        body: message,
-        status: result.value.status,
-        external_id: result.value.externalId,
-        cost_cents: result.value.costCents,
-      });
-    }
+    if (conversation_id) await db.from('messages').insert({ org_id, conversation_id, lead_id, direction: 'outbound', sender_type: sender_type as MessageSenderType, sender_id: agent_id, channel, body: message, status: result.value.status, external_id: result.value.externalId, cost_cents: result.value.costCents });
     return NextResponse.json({ success: true, external_id: result.value.externalId });
   } catch (e) { console.error('Send error:', e); return NextResponse.json({ error: 'Internal error' }, { status: 500 }); }
 }

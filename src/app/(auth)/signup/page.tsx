@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Zap, Eye, EyeOff, AlertCircle, Loader2, Check } from 'lucide-react';
-import { getSupabaseBrowser } from '@/lib/supabase-browser';
+import { createClient } from '@/lib/supabase/client';
 
 const VERTICALS = [
   { value: 'hvac', label: 'HVAC' },
@@ -45,13 +45,14 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
 
-      // 1. Create the user account
+      // Step 1: Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/overview`,
           data: {
             full_name: fullName.trim(),
             company_name: companyName.trim(),
@@ -69,16 +70,35 @@ export default function SignupPage() {
         return;
       }
 
-      // If email confirmation is required, show confirmation screen
+      // If email confirmation is required (production), show confirmation screen
       if (authData.user && !authData.session) {
         setStep('confirm');
         setLoading(false);
         return;
       }
 
-      // If auto-confirmed (dev mode), set up the org
+      // If auto-confirmed (dev mode), bootstrap the org via server route
       if (authData.user && authData.session) {
-        await setupOrganization(supabase, authData.user.id);
+        const bootstrapRes = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            company_name: companyName.trim(),
+            vertical,
+            full_name: fullName.trim(),
+          }),
+        });
+
+        if (!bootstrapRes.ok) {
+          const data = await bootstrapRes.json();
+          setError(data.error || 'Failed to set up your account. Please contact support.');
+          setLoading(false);
+          return;
+        }
+
+        // Refresh the session to pick up the new JWT claims
+        await supabase.auth.refreshSession();
+
         router.push('/overview');
         router.refresh();
         return;
@@ -87,66 +107,6 @@ export default function SignupPage() {
       setError('Something went wrong. Please try again.');
       setLoading(false);
     }
-  }
-
-  async function setupOrganization(supabase: ReturnType<typeof getSupabaseBrowser>, userId: string) {
-    // Database types are currently partial in this repo; use untyped client for bootstrap writes.
-    const db = supabase as any;
-
-    const slug = companyName
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-      || `org-${Date.now()}`;
-
-    // Create org
-    const { data: org, error: orgErr } = await db
-      .from('organizations')
-      .insert({
-        name: companyName.trim() || 'My Company',
-        slug,
-        vertical: vertical as any,
-        plan: 'trial',
-      })
-      .select('id')
-      .single();
-
-    if (orgErr || !org) {
-      console.error('Org creation error:', orgErr);
-      return;
-    }
-
-    // Create membership
-    await db.from('organization_members').insert({
-      org_id: org.id,
-      user_id: userId,
-      role: 'owner',
-    });
-
-    // Create user profile
-    await db.from('user_profiles').insert({
-      id: userId,
-      full_name: fullName.trim(),
-    });
-
-    // Set org_id in user JWT claims
-    // Note: This requires a Supabase Auth hook or admin API.
-    // For now, we'll use the admin RPC approach
-    const { error: claimError } = await db.rpc('set_user_org_claim' as any, {
-      p_user_id: userId,
-      p_org_id: org.id,
-    });
-
-    if (claimError) {
-      // Fallback: the claim will be set on next login via auth hook
-      console.log('JWT claim will be set on next login');
-    }
-
-    // Create default pipeline
-    await db.rpc('create_default_pipeline', {
-      p_org_id: org.id,
-    });
   }
 
   // Confirmation screen
@@ -160,7 +120,6 @@ export default function SignupPage() {
             </div>
             <span className="text-[22px] font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Satoshi' }}>LeadSaaS</span>
           </div>
-
           <div className="rounded-2xl p-6 md:p-8 text-center animate-fade-in" style={{ background: '#fff', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: 'var(--success-soft)' }}>
               <Check size={28} style={{ color: 'var(--success)' }} />
@@ -208,31 +167,26 @@ export default function SignupPage() {
                 className="w-full px-4 py-3 rounded-xl text-[14px] transition-all" style={{ background: '#f8f9fb', border: '1.5px solid #e5e7eb', outline: 'none' }}
                 onFocus={(e) => (e.target.style.borderColor = 'var(--accent)')} onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')} />
             </div>
-
             <div>
               <label className="block text-[12.5px] font-semibold mb-1.5" style={{ color: 'var(--text-dark)' }}>Company Name</label>
               <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Acme HVAC" required disabled={loading}
                 className="w-full px-4 py-3 rounded-xl text-[14px] transition-all" style={{ background: '#f8f9fb', border: '1.5px solid #e5e7eb', outline: 'none' }}
                 onFocus={(e) => (e.target.style.borderColor = 'var(--accent)')} onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')} />
             </div>
-
             <div>
               <label className="block text-[12.5px] font-semibold mb-1.5" style={{ color: 'var(--text-dark)' }}>Industry</label>
               <select value={vertical} onChange={(e) => setVertical(e.target.value)} disabled={loading}
-                className="w-full px-4 py-3 rounded-xl text-[14px] transition-all appearance-none cursor-pointer"
-                style={{ background: '#f8f9fb', border: '1.5px solid #e5e7eb', outline: 'none' }}
+                className="w-full px-4 py-3 rounded-xl text-[14px] appearance-none cursor-pointer" style={{ background: '#f8f9fb', border: '1.5px solid #e5e7eb', outline: 'none' }}
                 onFocus={(e) => (e.target.style.borderColor = 'var(--accent)')} onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}>
                 {VERTICALS.map((v) => <option key={v.value} value={v.value}>{v.label}</option>)}
               </select>
             </div>
-
             <div>
               <label className="block text-[12.5px] font-semibold mb-1.5" style={{ color: 'var(--text-dark)' }}>Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required autoComplete="email" disabled={loading}
                 className="w-full px-4 py-3 rounded-xl text-[14px] transition-all" style={{ background: '#f8f9fb', border: '1.5px solid #e5e7eb', outline: 'none' }}
                 onFocus={(e) => (e.target.style.borderColor = 'var(--accent)')} onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')} />
             </div>
-
             <div>
               <label className="block text-[12.5px] font-semibold mb-1.5" style={{ color: 'var(--text-dark)' }}>Password</label>
               <div className="relative">
@@ -247,7 +201,6 @@ export default function SignupPage() {
                 <p className="text-[11.5px] mt-1.5" style={{ color: 'var(--danger)' }}>Password must be at least 8 characters</p>
               )}
             </div>
-
             <button type="submit" disabled={loading || !email || !password || !fullName || !companyName}
               className="w-full py-3 rounded-xl text-[14px] font-bold transition-all flex items-center justify-center gap-2"
               style={{ background: 'var(--accent)', color: '#0b0e14', opacity: loading ? 0.6 : 1, cursor: loading ? 'wait' : 'pointer' }}>
@@ -261,7 +214,6 @@ export default function SignupPage() {
             <Link href="/login" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Sign in</Link>
           </p>
         </div>
-
         <p className="text-center text-[11px] mt-6" style={{ color: 'var(--text-muted)' }}>
           By creating an account, you agree to our Terms of Service and Privacy Policy.
         </p>

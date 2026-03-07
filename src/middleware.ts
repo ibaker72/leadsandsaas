@@ -1,43 +1,49 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createClient } from '@/lib/supabase/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
 
+// Routes that don't require authentication
+const PUBLIC_ROUTES = [
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/update-password',
+  '/api/auth/callback',
+  '/api/auth/signup',     // authenticated but handles its own auth check
+  '/api/leads/capture',
+  '/api/webhooks',
+];
+
+function isPublicRoute(path: string): boolean {
+  return PUBLIC_ROUTES.some((route) => path.startsWith(route));
+}
+
+function isAuthPage(path: string): boolean {
+  return ['/login', '/signup', '/forgot-password'].some((p) => path.startsWith(p));
+}
+
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request: { headers: request.headers } });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return request.cookies.getAll(); },
-        setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request: { headers: request.headers } });
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-        },
-      },
-    }
-  );
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const { supabase, response } = createClient(request);
   const path = request.nextUrl.pathname;
-  const isAuthPage = path.startsWith('/login') || path.startsWith('/signup');
-  const isPublicApi = path.startsWith('/api/leads/capture') || path.startsWith('/api/webhooks');
 
-  // Allow public API routes
-  if (isPublicApi) return response;
+  // Always allow public routes through (to refresh cookies/session)
+  const { data: { user } } = await supabase.auth.getUser();
 
-  // Redirect unauthenticated users to login
-  if (!user && !isAuthPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+  // Allow all public routes
+  if (isPublicRoute(path)) {
+    // Redirect authenticated users away from login/signup (but not from update-password)
+    if (user && isAuthPage(path)) {
+      return NextResponse.redirect(new URL('/overview', request.url));
+    }
+    return response;
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && isAuthPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/overview';
+  // Redirect unauthenticated users to login
+  if (!user) {
+    const url = new URL('/login', request.url);
+    // Preserve the intended destination
+    if (path !== '/') {
+      url.searchParams.set('next', path);
+    }
     return NextResponse.redirect(url);
   }
 
@@ -45,5 +51,15 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|widget.js|api/leads/capture|api/webhooks).*)'],
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization)
+     * - favicon.ico
+     * - widget.js (embeddable widget)
+     * - Public assets
+     */
+    '/((?!_next/static|_next/image|favicon.ico|widget.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };

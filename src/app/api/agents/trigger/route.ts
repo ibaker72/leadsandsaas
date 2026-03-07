@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminSupabase } from '@/lib/db/supabase';
+import { createAdminClient as createAdminSupabase, verifyInternalAuth } from '@/lib/supabase/admin';
 import { getAgentEngine, type AgentContext } from '@/lib/ai/engine';
 import { ActionExecutor } from '@/lib/ai/executor';
 
 export async function POST(req: NextRequest) {
-  if (req.headers.get('authorization') !== `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!verifyInternalAuth(req.headers.get('authorization'))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const { lead_id, agent_id, conversation_id, trigger, step_number, total_steps } = await req.json();
     const db = createAdminSupabase();
-    const [{ data: rawLead }, { data: rawAgent }] = await Promise.all([
-      db.from('leads').select('*').eq('id', lead_id).single(),
-      db.from('agents').select('*').eq('id', agent_id).single(),
-    ]);
-    const lead = rawLead as Record<string, any> | null;
-    const agent = rawAgent as Record<string, any> | null;
+    const [{ data: lead }, { data: agent }] = await Promise.all([db.from('leads').select('*').eq('id', lead_id).single(), db.from('agents').select('*').eq('id', agent_id).single()]);
     if (!lead || !agent) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    const { data: rawOrg } = await db.from('organizations').select('*').eq('id', agent.org_id).single();
-    const org = rawOrg as Record<string, any> | null;
+    const { data: org } = await db.from('organizations').select('*').eq('id', agent.org_id).single();
     if (!org) return NextResponse.json({ error: 'No org' }, { status: 404 });
 
     let convId = conversation_id;
