@@ -1,7 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import type { Database } from './database.types';
 
 function requireEnv(key: string): string {
   const val = process.env[key];
@@ -15,7 +14,7 @@ const SUPABASE_SERVICE_KEY = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
 
 export async function createServerSupabase() {
   const cookieStore = await cookies();
-  return createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  return createServerClient<any>(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll() { return cookieStore.getAll(); },
       setAll(c: { name: string; value: string; options?: CookieOptions }[]) {
@@ -27,7 +26,7 @@ export async function createServerSupabase() {
 
 export async function createRouteHandlerSupabase() {
   const cookieStore = await cookies();
-  return createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  return createServerClient<any>(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll() { return cookieStore.getAll(); },
       setAll(c: { name: string; value: string; options?: CookieOptions }[]) {
@@ -37,10 +36,10 @@ export async function createRouteHandlerSupabase() {
   });
 }
 
-let adminClient: SupabaseClient<Database> | null = null;
-export function createAdminSupabase(): SupabaseClient<Database> {
+let adminClient: SupabaseClient<any> | null = null;
+export function createAdminSupabase(): SupabaseClient<any> {
   if (adminClient) return adminClient;
-  adminClient = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+  adminClient = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   return adminClient;

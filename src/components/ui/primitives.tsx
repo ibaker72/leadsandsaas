@@ -143,11 +143,22 @@ export function Button({
 // ---------------------------------------------------------------------------
 // Card
 // ---------------------------------------------------------------------------
-export function Card({ children, className = '', padding = true }: { children: ReactNode; className?: string; padding?: boolean }) {
+export function Card({
+  children,
+  className = '',
+  padding = true,
+  style,
+  ...props
+}: {
+  children: ReactNode;
+  className?: string;
+  padding?: boolean;
+} & React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={`rounded-xl ${padding ? 'p-4 md:p-6' : ''} ${className}`}
-      style={{ background: '#fff', border: '1px solid #e8eaef', boxShadow: 'var(--shadow-sm)' }}
+      style={{ background: '#fff', border: '1px solid #e8eaef', boxShadow: 'var(--shadow-sm)', ...style }}
+      {...props}
     >
       {children}
     </div>

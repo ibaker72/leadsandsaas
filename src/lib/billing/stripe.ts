@@ -4,7 +4,7 @@ import { Ok, type Result, tryCatch } from '@/lib/errors';
 import { AppError } from '@/lib/errors';
 import type { OrgPlan } from '@/lib/types/domain';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-12-18.acacia' });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-02-24.acacia' });
 
 export async function createCheckoutSession(orgId: string, planId: OrgPlan, interval: 'monthly' | 'annual', userId: string, email: string): Promise<Result<{ url: string }>> {
   return tryCatch(async () => {

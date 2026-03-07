@@ -8,9 +8,15 @@ export async function POST(req: NextRequest) {
   try {
     const { lead_id, agent_id, conversation_id, trigger, step_number, total_steps } = await req.json();
     const db = createAdminSupabase();
-    const [{ data: lead }, { data: agent }] = await Promise.all([db.from('leads').select('*').eq('id', lead_id).single(), db.from('agents').select('*').eq('id', agent_id).single()]);
+    const [{ data: rawLead }, { data: rawAgent }] = await Promise.all([
+      db.from('leads').select('*').eq('id', lead_id).single(),
+      db.from('agents').select('*').eq('id', agent_id).single(),
+    ]);
+    const lead = rawLead as Record<string, any> | null;
+    const agent = rawAgent as Record<string, any> | null;
     if (!lead || !agent) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    const { data: org } = await db.from('organizations').select('*').eq('id', agent.org_id).single();
+    const { data: rawOrg } = await db.from('organizations').select('*').eq('id', agent.org_id).single();
+    const org = rawOrg as Record<string, any> | null;
     if (!org) return NextResponse.json({ error: 'No org' }, { status: 404 });
 
     let convId = conversation_id;

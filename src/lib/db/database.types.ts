@@ -8,28 +8,28 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export interface Database {
   public: {
     Tables: {
-      organizations: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      organization_members: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      user_profiles: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      agents: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      agent_knowledge_base: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      agent_templates: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      leads: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      conversations: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      messages: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      appointments: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      pipeline_stages: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      lead_pipeline_entries: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      pipeline_transitions: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      domain_events: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      usage_records: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      usage_daily: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      audit_log: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      webhook_endpoints: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      webhook_deliveries: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      workflow_sequences: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      workflow_executions: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
-      notifications: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; };
+      organizations: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      organization_members: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      user_profiles: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      agents: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      agent_knowledge_base: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      agent_templates: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      leads: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      conversations: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      messages: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      appointments: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      pipeline_stages: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      lead_pipeline_entries: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      pipeline_transitions: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      domain_events: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      usage_records: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      usage_daily: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      audit_log: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      webhook_endpoints: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      webhook_deliveries: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      workflow_sequences: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      workflow_executions: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
+      notifications: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: []; };
     };
     Views: Record<string, never>;
     Functions: {
