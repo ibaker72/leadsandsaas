@@ -90,6 +90,9 @@ export default function SignupPage() {
   }
 
   async function setupOrganization(supabase: ReturnType<typeof getSupabaseBrowser>, userId: string) {
+    // Database types are currently partial in this repo; use untyped client for bootstrap writes.
+    const db = supabase as any;
+
     const slug = companyName
       .trim()
       .toLowerCase()
@@ -98,7 +101,7 @@ export default function SignupPage() {
       || `org-${Date.now()}`;
 
     // Create org
-    const { data: org, error: orgErr } = await supabase
+    const { data: org, error: orgErr } = await db
       .from('organizations')
       .insert({
         name: companyName.trim() || 'My Company',
@@ -115,14 +118,14 @@ export default function SignupPage() {
     }
 
     // Create membership
-    await supabase.from('organization_members').insert({
+    await db.from('organization_members').insert({
       org_id: org.id,
       user_id: userId,
       role: 'owner',
     });
 
     // Create user profile
-    await supabase.from('user_profiles').insert({
+    await db.from('user_profiles').insert({
       id: userId,
       full_name: fullName.trim(),
     });
@@ -130,16 +133,18 @@ export default function SignupPage() {
     // Set org_id in user JWT claims
     // Note: This requires a Supabase Auth hook or admin API.
     // For now, we'll use the admin RPC approach
-    await supabase.rpc('set_user_org_claim' as any, {
+    const { error: claimError } = await db.rpc('set_user_org_claim' as any, {
       p_user_id: userId,
       p_org_id: org.id,
-    }).catch(() => {
-      // Fallback: the claim will be set on next login via auth hook
-      console.log('JWT claim will be set on next login');
     });
 
+    if (claimError) {
+      // Fallback: the claim will be set on next login via auth hook
+      console.log('JWT claim will be set on next login');
+    }
+
     // Create default pipeline
-    await supabase.rpc('create_default_pipeline', {
+    await db.rpc('create_default_pipeline', {
       p_org_id: org.id,
     });
   }
