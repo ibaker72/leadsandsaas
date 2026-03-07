@@ -28,13 +28,13 @@ export default function LoginPage() {
           <form onSubmit={(e) => { e.preventDefault(); setLoading(true); }} className="space-y-4">
             <div>
               <label className="block text-[12.5px] font-semibold mb-1.5" style={{ color: 'var(--text-dark)' }}>Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required suppressHydrationWarning
                 className="w-full px-4 py-3 rounded-xl text-[14px]" style={{ background: '#f8f9fb', border: '1.5px solid #e5e7eb', outline: 'none', transition: 'border-color 0.15s' }}
                 onFocus={e => e.target.style.borderColor = 'var(--accent)'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
             </div>
             <div>
               <label className="block text-[12.5px] font-semibold mb-1.5" style={{ color: 'var(--text-dark)' }}>Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required suppressHydrationWarning
                 className="w-full px-4 py-3 rounded-xl text-[14px]" style={{ background: '#f8f9fb', border: '1.5px solid #e5e7eb', outline: 'none', transition: 'border-color 0.15s' }}
                 onFocus={e => e.target.style.borderColor = 'var(--accent)'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
             </div>
@@ -45,7 +45,7 @@ export default function LoginPage() {
               </label>
               <a href="#" className="text-[12.5px] font-medium" style={{ color: 'var(--accent)' }}>Forgot password?</a>
             </div>
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={loading} suppressHydrationWarning
               className="w-full py-3 rounded-xl text-[14px] font-bold transition-all"
               style={{ background: 'var(--accent)', color: '#0b0e14', opacity: loading ? 0.7 : 1 }}>
               {loading ? 'Signing in...' : 'Sign In'}
