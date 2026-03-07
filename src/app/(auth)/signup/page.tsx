@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Zap, Eye, EyeOff, AlertCircle, Loader2, Check } from 'lucide-react';
-import { getSupabaseBrowser } from '@/lib/db/supabase-browser';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 const VERTICALS = [
   { value: 'hvac', label: 'HVAC' },
