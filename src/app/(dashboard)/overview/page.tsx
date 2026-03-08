@@ -66,7 +66,7 @@ export default function OverviewPage() {
 
         {/* Chart + Agents */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6">
-          <Card className="lg:col-span-3 animate-fade-in opacity-0 stagger-3" style={{ animationFillMode: 'forwards' }}>
+          <Card className="lg:col-span-3 animate-fade-in opacity-0 stagger-3 [animation-fill-mode:forwards]">
             <div className="flex items-center justify-between mb-2">
               <SectionHeader title="Conversation Volume" action={<span className="text-[12px] md:text-[13px]" style={{ color: 'var(--text-dark-secondary)' }}>Last 14 days</span>} />
             </div>
