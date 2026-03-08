@@ -351,3 +351,121 @@ export function ComingSoonContent({ feature, description }: { feature: string; d
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// FormField — consistent form input with label
+// ---------------------------------------------------------------------------
+
+export function FormField({
+  label, children, hint, required,
+}: { label: string; children: ReactNode; hint?: string; required?: boolean }) {
+  return (
+    <div>
+      <label className="block text-[12px] md:text-[12.5px] font-semibold mb-1.5" style={{ color: 'var(--text-dark)' }}>
+        {label}{required && <span style={{ color: 'var(--danger)' }}> *</span>}
+      </label>
+      {children}
+      {hint && <p className="text-[11px] mt-1" style={{ color: 'var(--text-dark-secondary)' }}>{hint}</p>}
+    </div>
+  );
+}
+
+export function FormInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className={`w-full px-3.5 py-2.5 rounded-lg text-[13px] transition-all ${props.className || ''}`}
+      style={{ background: '#f8f9fb', border: '1.5px solid #e5e7eb', outline: 'none', color: 'var(--text-dark)', ...props.style }}
+      onFocus={(e) => { e.target.style.borderColor = 'var(--accent)'; props.onFocus?.(e); }}
+      onBlur={(e) => { e.target.style.borderColor = '#e5e7eb'; props.onBlur?.(e); }}
+    />
+  );
+}
+
+export function FormSelect({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { children: ReactNode }) {
+  return (
+    <select
+      {...props}
+      className={`w-full px-3.5 py-2.5 rounded-lg text-[13px] appearance-none cursor-pointer ${props.className || ''}`}
+      style={{ background: '#f8f9fb', border: '1.5px solid #e5e7eb', outline: 'none', color: 'var(--text-dark)', ...props.style }}
+      onFocus={(e) => { e.target.style.borderColor = 'var(--accent)'; props.onFocus?.(e); }}
+      onBlur={(e) => { e.target.style.borderColor = '#e5e7eb'; props.onBlur?.(e); }}
+    >
+      {children}
+    </select>
+  );
+}
+
+export function FormTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className={`w-full px-3.5 py-2.5 rounded-lg text-[13px] transition-all resize-none ${props.className || ''}`}
+      style={{ background: '#f8f9fb', border: '1.5px solid #e5e7eb', outline: 'none', color: 'var(--text-dark)', ...props.style }}
+      onFocus={(e) => { e.target.style.borderColor = 'var(--accent)'; props.onFocus?.(e); }}
+      onBlur={(e) => { e.target.style.borderColor = '#e5e7eb'; props.onBlur?.(e); }}
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DropdownMenu — positioned action menu
+// ---------------------------------------------------------------------------
+
+export function DropdownMenu({
+  open, onClose, items, anchorRef,
+}: {
+  open: boolean;
+  onClose: () => void;
+  items: { label: string; icon?: ReactNode; onClick: () => void; danger?: boolean; disabled?: boolean }[];
+  anchorRef?: React.RefObject<HTMLElement | null>;
+}) {
+  if (!open) return null;
+  return (
+    <>
+      <div className="fixed inset-0 z-[90]" onClick={onClose} />
+      <div
+        className="absolute right-0 top-full mt-1 z-[95] min-w-[180px] rounded-xl py-1.5 animate-fade-in"
+        style={{ background: '#fff', border: '1px solid #e8eaef', boxShadow: '0 10px 40px -8px rgba(0,0,0,0.15)' }}
+      >
+        {items.map((item) => (
+          <button
+            key={item.label}
+            onClick={() => { item.onClick(); onClose(); }}
+            disabled={item.disabled}
+            className="w-full text-left px-3.5 py-2 text-[13px] font-medium flex items-center gap-2.5 transition-colors hover:bg-gray-50 disabled:opacity-40"
+            style={{ color: item.danger ? 'var(--danger)' : 'var(--text-dark)' }}
+          >
+            {item.icon}
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FormToggle — switch toggle
+// ---------------------------------------------------------------------------
+
+export function FormToggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label?: string }) {
+  return (
+    <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className="relative w-10 h-[22px] rounded-full transition-colors"
+        style={{ background: checked ? 'var(--accent)' : '#d1d5db' }}
+      >
+        <span
+          className="absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-white transition-transform shadow-sm"
+          style={{ transform: checked ? 'translateX(18px)' : 'translateX(0)' }}
+        />
+      </button>
+      {label && <span className="text-[12.5px] font-medium" style={{ color: 'var(--text-dark)' }}>{label}</span>}
+    </label>
+  );
+}
