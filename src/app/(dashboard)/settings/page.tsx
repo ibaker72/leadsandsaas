@@ -40,10 +40,11 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 // Page
 // ---------------------------------------------------------------------------
 export default function SettingsPage() {
-  // Widget copy
+  // Widget copy — uses capture_key (public-safe) instead of org UUID
   const [copied, setCopied] = useState(false);
-  const code = '<script\n  src="https://leadsandsaas.com/widget.js"\n  data-org="YOUR_ORG_ID"\n  data-agent="YOUR_AGENT_ID"\n  data-color="#f59e0b"\n  data-position="bottom-right"\n  data-vertical="hvac">\n</script>';
-  const copy = () => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const [captureKey, setCaptureKey] = useState<string | null>(null);
+  const widgetCode = `<script\n  src="https://leadsandsaas.com/widget.js"\n  data-key="${captureKey ?? 'loading...'}"\n  data-agent="YOUR_AGENT_ID"\n  data-color="#f59e0b"\n  data-position="bottom-right"\n  data-vertical="hvac">\n</script>`;
+  const copy = () => { navigator.clipboard.writeText(widgetCode); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
   // Modal state
   const [modal, setModal] = useState<string | null>(null);
@@ -76,30 +77,44 @@ export default function SettingsPage() {
   const [showWebhookSecret, setShowWebhookSecret] = useState(false);
   const [showResendKey, setShowResendKey] = useState(false);
 
-  // Load saved config on mount
+  // Track which secret fields the user has explicitly changed (so we only send those)
+  const [dirtySecrets, setDirtySecrets] = useState<Set<string>>(new Set());
+  const markSecretDirty = (field: string) => setDirtySecrets((s) => new Set(s).add(field));
+
+  // Load saved config on mount — secrets come back masked from API
   useEffect(() => {
     fetch('/api/integrations')
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (!data) return;
-        if (data.twilio) {
-          setTwilioConfig(data.twilio);
-          setStatuses((s) => ({ ...s, twilio: { connected: true, label: 'Connected' } }));
+        if (data.capture_key) setCaptureKey(data.capture_key);
+        const ints = data.integrations ?? data;
+        if (ints.twilio) {
+          // Populate non-secret fields; secret fields show masked placeholder
+          setTwilioConfig({
+            accountSid: ints.twilio.accountSid ?? '',
+            authToken: ints.twilio.authToken ?? '', // masked value like "••••xxxx"
+            phoneNumber: ints.twilio.phoneNumber ?? '',
+          });
+          if (ints.twilio.has_authToken) setStatuses((s) => ({ ...s, twilio: { connected: true, label: 'Connected' } }));
         }
-        if (data.resend) {
-          setResendConfig(data.resend);
-          setStatuses((s) => ({ ...s, email: { connected: true, label: 'Connected' } }));
+        if (ints.resend) {
+          setResendConfig({
+            apiKey: ints.resend.apiKey ?? '',
+            fromEmail: ints.resend.fromEmail ?? '',
+            replyTo: ints.resend.replyTo ?? '',
+            domain: ints.resend.domain ?? '',
+          });
+          if (ints.resend.has_apiKey) setStatuses((s) => ({ ...s, email: { connected: true, label: 'Connected' } }));
         }
-        if (data.webhooks) {
-          setWebhookConfig(data.webhooks);
-          setStatuses((s) => ({ ...s, webhooks: { connected: true, label: 'Connected' } }));
+        if (ints.webhooks) {
+          setWebhookConfig({
+            url: ints.webhooks.url ?? '',
+            secret: ints.webhooks.secret ?? '',
+            events: Array.isArray(ints.webhooks.events) ? ints.webhooks.events : [],
+          });
+          if (ints.webhooks.url) setStatuses((s) => ({ ...s, webhooks: { connected: true, label: 'Connected' } }));
         }
-        if (data.domain) {
-          setDomainConfig(data.domain);
-          setStatuses((s) => ({ ...s, domain: { connected: true, label: 'Configured' } }));
-        }
-        if (data.security) setSecurityConfig(data.security);
-        if (data.notifications) setNotifConfig(data.notifications);
       })
       .catch(() => { /* silent */ });
   }, []);
@@ -107,13 +122,20 @@ export default function SettingsPage() {
   // ---------------------------------------------------------------------------
   // Save helpers
   // ---------------------------------------------------------------------------
-  const saveIntegration = async (provider: string, config: unknown) => {
+  const saveIntegration = async (provider: string, config: Record<string, unknown>) => {
     setSaving(true);
     try {
+      // Strip masked placeholders — the API also guards against this,
+      // but we avoid sending them in the first place for clarity.
+      const cleaned: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(config)) {
+        if (typeof v === 'string' && v.startsWith('••••') && !dirtySecrets.has(`${provider}.${k}`)) continue;
+        cleaned[k] = v;
+      }
       await fetch('/api/integrations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, config }),
+        body: JSON.stringify({ provider, config: cleaned }),
       });
       // Optimistic status update
       const label = provider === 'domain' ? 'Configured' : 'Connected';
@@ -131,6 +153,7 @@ export default function SettingsPage() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let s = 'whsec_';
     for (let i = 0; i < 32; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+    markSecretDirty('webhooks.secret');
     setWebhookConfig((c) => ({ ...c, secret: s }));
   };
 
@@ -167,13 +190,13 @@ export default function SettingsPage() {
                 {copied?<><Check size={12}/> Copied</>:<><Copy size={12}/> Copy</>}
               </button>
             </div>
-            <pre className="p-3 md:p-4 text-[11px] md:text-[13px] leading-relaxed overflow-x-auto" style={{ color:'var(--text-primary)', fontFamily:'monospace' }}><code>{code}</code></pre>
+            <pre className="p-3 md:p-4 text-[11px] md:text-[13px] leading-relaxed overflow-x-auto" style={{ color:'var(--text-primary)', fontFamily:'monospace' }}><code>{widgetCode}</code></pre>
           </div>
           <h4 className="text-[13px] md:text-[14px] font-bold mb-3" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>Configuration</h4>
           <div className="rounded-lg overflow-x-auto" style={{ border:'1px solid #e8eaef' }}>
             <table className="w-full min-w-[400px] text-[12px] md:text-[13px]">
               <thead><tr style={{ background:'#f8f9fb' }}><th className="text-left px-3 md:px-4 py-2.5 text-[10px] md:text-[11.5px] font-bold uppercase" style={{ color:'var(--text-dark-secondary)' }}>Attribute</th><th className="text-left px-3 md:px-4 py-2.5 text-[10px] md:text-[11.5px] font-bold uppercase" style={{ color:'var(--text-dark-secondary)' }}>Description</th></tr></thead>
-              <tbody>{[{a:'data-org',d:'Organization ID (required)'},{a:'data-agent',d:'Agent ID (optional)'},{a:'data-color',d:'Brand color hex'},{a:'data-position',d:'bottom-right / bottom-left'},{a:'data-vertical',d:'hvac, roofing, med_spa, dental, general'}].map(({a,d})=><tr key={a} style={{ borderTop:'1px solid #f0f2f5' }}><td className="px-3 md:px-4 py-2.5 font-mono text-[11px] md:text-[12.5px] whitespace-nowrap" style={{ color:'var(--accent)' }}>{a}</td><td className="px-3 md:px-4 py-2.5" style={{ color:'var(--text-dark)' }}>{d}</td></tr>)}</tbody>
+              <tbody>{[{a:'data-key',d:'Capture key (required)'},{a:'data-agent',d:'Agent ID (optional)'},{a:'data-color',d:'Brand color hex'},{a:'data-position',d:'bottom-right / bottom-left'},{a:'data-vertical',d:'hvac, roofing, med_spa, dental, general'}].map(({a,d})=><tr key={a} style={{ borderTop:'1px solid #f0f2f5' }}><td className="px-3 md:px-4 py-2.5 font-mono text-[11px] md:text-[12.5px] whitespace-nowrap" style={{ color:'var(--accent)' }}>{a}</td><td className="px-3 md:px-4 py-2.5" style={{ color:'var(--text-dark)' }}>{d}</td></tr>)}</tbody>
             </table>
           </div>
         </Card>
@@ -260,7 +283,7 @@ export default function SettingsPage() {
                 type={showAuthToken ? 'text' : 'password'}
                 placeholder="Your Twilio auth token"
                 value={twilioConfig.authToken}
-                onChange={(e) => setTwilioConfig((c) => ({ ...c, authToken: e.target.value }))}
+                onChange={(e) => { markSecretDirty('twilio.authToken'); setTwilioConfig((c) => ({ ...c, authToken: e.target.value })); }}
               />
               <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-dark-secondary)' }} onClick={() => setShowAuthToken((v) => !v)}>
                 {showAuthToken ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -334,7 +357,7 @@ export default function SettingsPage() {
                 type={showResendKey ? 'text' : 'password'}
                 placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                 value={resendConfig.apiKey}
-                onChange={(e) => setResendConfig((c) => ({ ...c, apiKey: e.target.value }))}
+                onChange={(e) => { markSecretDirty('resend.apiKey'); setResendConfig((c) => ({ ...c, apiKey: e.target.value })); }}
               />
               <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-dark-secondary)' }} onClick={() => setShowResendKey((v) => !v)}>
                 {showResendKey ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -409,7 +432,7 @@ export default function SettingsPage() {
                   type={showWebhookSecret ? 'text' : 'password'}
                   placeholder="whsec_..."
                   value={webhookConfig.secret}
-                  onChange={(e) => setWebhookConfig((c) => ({ ...c, secret: e.target.value }))}
+                  onChange={(e) => { markSecretDirty('webhooks.secret'); setWebhookConfig((c) => ({ ...c, secret: e.target.value })); }}
                 />
                 <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-dark-secondary)' }} onClick={() => setShowWebhookSecret((v) => !v)}>
                   {showWebhookSecret ? <EyeOff size={15} /> : <Eye size={15} />}

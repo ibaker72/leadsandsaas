@@ -3,18 +3,22 @@ import { createAdminClient as createAdminSupabase } from '@/lib/supabase/admin';
 import { DomainEventEmitter } from '@/lib/events/emitter';
 import { z } from 'zod';
 
+// ---------------------------------------------------------------------------
+// Validation — capture_key is a 32-char hex string, NOT a UUID
+// ---------------------------------------------------------------------------
 const schema = z.object({
-  org_key: z.string().uuid(), agent_id: z.string().uuid().optional(),
+  capture_key: z.string().min(16).max(64),
+  agent_id: z.string().uuid().optional(),
   first_name: z.string().max(100).optional(), last_name: z.string().max(100).optional(),
   email: z.string().email().optional(), phone: z.string().max(20).optional(),
   service_needed: z.string().max(500).optional(), message: z.string().max(2000).optional(),
   sms_consent: z.boolean().optional().default(false), email_consent: z.boolean().optional().default(false),
-  utm_source: z.string().optional(), utm_medium: z.string().optional(), utm_campaign: z.string().optional(),
-  referrer: z.string().optional(), landing_page: z.string().optional(),
+  utm_source: z.string().max(200).optional(), utm_medium: z.string().max(200).optional(), utm_campaign: z.string().max(200).optional(),
+  referrer: z.string().max(2000).optional(), landing_page: z.string().max(2000).optional(),
 }).refine(d => d.email || d.phone, { message: 'Email or phone required' });
 
 type CaptureInput = {
-  org_key: string;
+  capture_key: string;
   agent_id?: string;
   first_name?: string;
   last_name?: string;
@@ -34,6 +38,40 @@ type CaptureInput = {
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };
 export async function OPTIONS() { return new NextResponse(null, { status: 204, headers: cors }); }
 
+// ---------------------------------------------------------------------------
+// Lightweight in-memory rate limiter (per IP, sliding window)
+// ---------------------------------------------------------------------------
+const RATE_WINDOW_MS = 60_000; // 1 minute
+const RATE_MAX = 10;           // max requests per window per IP
+const ipHits = new Map<string, number[]>();
+
+// Periodic cleanup every 5 minutes to avoid memory growth
+let lastCleanup = Date.now();
+function cleanupHits() {
+  const now = Date.now();
+  if (now - lastCleanup < 300_000) return;
+  lastCleanup = now;
+  const cutoff = now - RATE_WINDOW_MS;
+  for (const [ip, hits] of ipHits.entries()) {
+    const valid = hits.filter(t => t > cutoff);
+    if (valid.length === 0) ipHits.delete(ip);
+    else ipHits.set(ip, valid);
+  }
+}
+
+function isRateLimited(ip: string): boolean {
+  cleanupHits();
+  const now = Date.now();
+  const cutoff = now - RATE_WINDOW_MS;
+  const hits = (ipHits.get(ip) ?? []).filter(t => t > cutoff);
+  hits.push(now);
+  ipHits.set(ip, hits);
+  return hits.length > RATE_MAX;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 function hasStringId(value: unknown): value is { id: string } {
   if (!value || typeof value !== 'object') return false;
   return typeof (value as { id?: unknown }).id === 'string';
@@ -47,14 +85,25 @@ function normalizePhone(p: string): string | null {
   return /^\+[1-9]\d{1,14}$/.test(c) ? c : null;
 }
 
+// ---------------------------------------------------------------------------
+// POST handler
+// ---------------------------------------------------------------------------
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit by IP
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    if (isRateLimited(ip)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: cors });
+    }
+
     const parsed = schema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, { status: 422, headers: cors });
     const input = parsed.data as CaptureInput;
     const db = createAdminSupabase();
-    const { data: org } = await db.from('organizations').select('id, plan, settings').eq('id', input.org_key).single();
-    if (!hasStringId(org)) return NextResponse.json({ error: 'Invalid organization' }, { status: 404, headers: cors });
+
+    // Look up org by capture_key (NOT by internal UUID)
+    const { data: org } = await db.from('organizations').select('id, plan, settings').eq('capture_key', input.capture_key).single();
+    if (!hasStringId(org)) return NextResponse.json({ error: 'Invalid capture key' }, { status: 404, headers: cors });
     const orgId = org.id;
 
     const phoneE164 = input.phone ? normalizePhone(input.phone) : null;
