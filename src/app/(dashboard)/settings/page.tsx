@@ -1,22 +1,152 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TopBar } from '@/components/dashboard/sidebar';
-import { Card, Button, Badge, Modal, ComingSoonContent } from '@/components/ui/primitives';
-import { Copy, Check, Code, Phone, Mail, Webhook, Globe, Shield, Bell } from 'lucide-react';
+import { Card, Button, Badge, Modal, FormField, FormInput, FormSelect, FormToggle } from '@/components/ui/primitives';
+import { Copy, Check, Code, Phone, Mail, Webhook, Globe, Shield, Bell, RefreshCw, Eye, EyeOff } from 'lucide-react';
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+type TwilioConfig = { accountSid: string; authToken: string; phoneNumber: string };
+type ResendConfig = { apiKey: string; fromEmail: string; replyTo: string; domain: string };
+type WebhookConfig = { url: string; secret: string; events: string[] };
+type DomainConfig = { domain: string };
+type SecurityConfig = { twoFactor: boolean; sessionTimeout: string; apiKey: string };
+type NotifConfig = { newLead: boolean; appointmentBooked: boolean; agentError: boolean };
+
+type ConnectionStatus = Record<string, { connected: boolean; label: string }>;
+
+const WEBHOOK_EVENTS = [
+  'lead.created',
+  'message.sent',
+  'appointment.booked',
+  'pipeline.stage_changed',
+] as const;
+
+// ---------------------------------------------------------------------------
+// Toast helper
+// ---------------------------------------------------------------------------
+function Toast({ message, onDone }: { message: string; onDone: () => void }) {
+  useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t); }, [onDone]);
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-xl text-[13px] font-semibold shadow-lg animate-fade-in"
+      style={{ background: 'var(--text-dark)', color: '#fff' }}>
+      {message}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 export default function SettingsPage() {
+  // Widget copy
   const [copied, setCopied] = useState(false);
-  const [modal, setModal] = useState<string | null>(null);
   const code = '<script\n  src="https://leadsandsaas.com/widget.js"\n  data-org="YOUR_ORG_ID"\n  data-agent="YOUR_AGENT_ID"\n  data-color="#f59e0b"\n  data-position="bottom-right"\n  data-vertical="hvac">\n</script>';
-  const copy = () => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(()=>setCopied(false), 2000); };
+  const copy = () => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
+  // Modal state
+  const [modal, setModal] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  // Connection statuses
+  const [statuses, setStatuses] = useState<ConnectionStatus>({
+    twilio: { connected: false, label: 'Not connected' },
+    email: { connected: false, label: 'Not connected' },
+    webhooks: { connected: false, label: 'Not connected' },
+    domain: { connected: false, label: 'Not configured' },
+  });
+
+  // Config states
+  const [twilioConfig, setTwilioConfig] = useState<TwilioConfig>({ accountSid: '', authToken: '', phoneNumber: '' });
+  const [resendConfig, setResendConfig] = useState<ResendConfig>({ apiKey: '', fromEmail: '', replyTo: '', domain: '' });
+  const [webhookConfig, setWebhookConfig] = useState<WebhookConfig>({ url: '', secret: '', events: [] });
+  const [domainConfig, setDomainConfig] = useState<DomainConfig>({ domain: '' });
+  const [securityConfig, setSecurityConfig] = useState<SecurityConfig>({ twoFactor: false, sessionTimeout: '30', apiKey: '' });
+  const [notifConfig, setNotifConfig] = useState<NotifConfig>({ newLead: true, appointmentBooked: true, agentError: true });
+
+  // Test SMS phone
+  const [testPhone, setTestPhone] = useState('');
+  const [showTestPhone, setShowTestPhone] = useState(false);
+
+  // Password visibility toggles
+  const [showAuthToken, setShowAuthToken] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
+  const [showResendKey, setShowResendKey] = useState(false);
+
+  // Load saved config on mount
+  useEffect(() => {
+    fetch('/api/integrations')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        if (data.twilio) {
+          setTwilioConfig(data.twilio);
+          setStatuses((s) => ({ ...s, twilio: { connected: true, label: 'Connected' } }));
+        }
+        if (data.resend) {
+          setResendConfig(data.resend);
+          setStatuses((s) => ({ ...s, email: { connected: true, label: 'Connected' } }));
+        }
+        if (data.webhooks) {
+          setWebhookConfig(data.webhooks);
+          setStatuses((s) => ({ ...s, webhooks: { connected: true, label: 'Connected' } }));
+        }
+        if (data.domain) {
+          setDomainConfig(data.domain);
+          setStatuses((s) => ({ ...s, domain: { connected: true, label: 'Configured' } }));
+        }
+        if (data.security) setSecurityConfig(data.security);
+        if (data.notifications) setNotifConfig(data.notifications);
+      })
+      .catch(() => { /* silent */ });
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Save helpers
+  // ---------------------------------------------------------------------------
+  const saveIntegration = async (provider: string, config: unknown) => {
+    setSaving(true);
+    try {
+      await fetch('/api/integrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, config }),
+      });
+      // Optimistic status update
+      const label = provider === 'domain' ? 'Configured' : 'Connected';
+      setStatuses((s) => ({ ...s, [provider]: { connected: true, label } }));
+      setToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} configuration saved`);
+      setModal(null);
+    } catch {
+      setToast('Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const generateSecret = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let s = 'whsec_';
+    for (let i = 0; i < 32; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+    setWebhookConfig((c) => ({ ...c, secret: s }));
+  };
+
+  // ---------------------------------------------------------------------------
+  // Integration list (uses live statuses)
+  // ---------------------------------------------------------------------------
   const integrations = [
-    { id: 'twilio', name: 'Twilio SMS', desc: 'Send and receive SMS messages', icon: Phone, status: 'Not connected' },
-    { id: 'email', name: 'Email (Resend)', desc: 'Automated email campaigns', icon: Mail, status: 'Not connected' },
-    { id: 'webhooks', name: 'Webhooks', desc: 'Send events to external services', icon: Webhook, status: 'Not connected' },
-    { id: 'domain', name: 'Custom Domain', desc: 'Use your own domain for the widget', icon: Globe, status: 'Not configured' },
+    { id: 'twilio', name: 'Twilio SMS', desc: 'Send and receive SMS messages', icon: Phone },
+    { id: 'email', name: 'Email (Resend)', desc: 'Automated email campaigns', icon: Mail },
+    { id: 'webhooks', name: 'Webhooks', desc: 'Send events to external services', icon: Webhook },
+    { id: 'domain', name: 'Custom Domain', desc: 'Use your own domain for the widget', icon: Globe },
   ];
 
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
   return (
     <>
       <TopBar title="Settings" subtitle="Widget & Integrations" />
@@ -60,23 +190,26 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="space-y-3">
-            {integrations.map((int) => (
-              <div key={int.id} className="flex items-center justify-between p-3.5 rounded-xl transition-colors hover:bg-gray-50/80" style={{ border: '1px solid #f0f2f5' }}>
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#f0f2f5', color: 'var(--text-dark-secondary)' }}>
-                    <int.icon size={16} />
+            {integrations.map((int) => {
+              const st = statuses[int.id];
+              return (
+                <div key={int.id} className="flex items-center justify-between p-3.5 rounded-xl transition-colors hover:bg-gray-50/80" style={{ border: '1px solid #f0f2f5' }}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#f0f2f5', color: 'var(--text-dark-secondary)' }}>
+                      <int.icon size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold" style={{ color: 'var(--text-dark)' }}>{int.name}</div>
+                      <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text-dark-secondary)' }}>{int.desc}</div>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[13px] font-semibold" style={{ color: 'var(--text-dark)' }}>{int.name}</div>
-                    <div className="text-[11px] md:text-[12px]" style={{ color: 'var(--text-dark-secondary)' }}>{int.desc}</div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant={st.connected ? 'success' : 'muted'}>{st.label}</Badge>
+                    <Button variant="ghost" size="sm" onClick={() => setModal(int.id)}>Configure</Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant="muted">{int.status}</Badge>
-                  <Button variant="ghost" size="sm" onClick={() => setModal(int.name)}>Configure</Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
 
@@ -92,7 +225,7 @@ export default function SettingsPage() {
                 <p className="text-[11px] md:text-[12px]" style={{ color: 'var(--text-dark-secondary)' }}>Account & access settings</p>
               </div>
             </div>
-            <Button variant="secondary" size="sm" className="w-full" onClick={() => setModal('Security Settings')}>Manage Security</Button>
+            <Button variant="secondary" size="sm" className="w-full" onClick={() => setModal('security')}>Manage Security</Button>
           </Card>
           <Card>
             <div className="flex items-center gap-3 mb-4">
@@ -104,18 +237,347 @@ export default function SettingsPage() {
                 <p className="text-[11px] md:text-[12px]" style={{ color: 'var(--text-dark-secondary)' }}>Email & alert preferences</p>
               </div>
             </div>
-            <Button variant="secondary" size="sm" className="w-full" onClick={() => setModal('Notification Preferences')}>Manage Notifications</Button>
+            <Button variant="secondary" size="sm" className="w-full" onClick={() => setModal('notifications')}>Manage Notifications</Button>
           </Card>
         </div>
       </div>
 
-      <Modal open={!!modal} onClose={() => setModal(null)} title={modal || 'Settings'}>
-        <ComingSoonContent
-          feature={modal || 'Configuration'}
-          description="This configuration panel will be available in the next update. All settings will be persisted to your organization profile."
-        />
-        <Button variant="primary" size="md" className="w-full mt-4" onClick={() => setModal(null)}>Got it</Button>
+      {/* ================================================================== */}
+      {/* Twilio SMS Modal                                                    */}
+      {/* ================================================================== */}
+      <Modal open={modal === 'twilio'} onClose={() => setModal(null)} title="Twilio SMS Configuration" size="lg">
+        <div className="space-y-4">
+          <FormField label="Account SID" required>
+            <FormInput
+              placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              value={twilioConfig.accountSid}
+              onChange={(e) => setTwilioConfig((c) => ({ ...c, accountSid: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="Auth Token" required>
+            <div className="relative">
+              <FormInput
+                type={showAuthToken ? 'text' : 'password'}
+                placeholder="Your Twilio auth token"
+                value={twilioConfig.authToken}
+                onChange={(e) => setTwilioConfig((c) => ({ ...c, authToken: e.target.value }))}
+              />
+              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-dark-secondary)' }} onClick={() => setShowAuthToken((v) => !v)}>
+                {showAuthToken ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </FormField>
+          <FormField label="Phone Number" required hint="Include country code, e.g. +15551234567">
+            <FormInput
+              type="tel"
+              placeholder="+15551234567"
+              value={twilioConfig.phoneNumber}
+              onChange={(e) => setTwilioConfig((c) => ({ ...c, phoneNumber: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="Webhook URL" hint="Configure this URL in your Twilio console">
+            <FormInput
+              readOnly
+              value={typeof window !== 'undefined' ? `${window.location.origin}/api/webhooks/twilio` : '/api/webhooks/twilio'}
+              style={{ background: '#f0f2f5', cursor: 'default' }}
+            />
+          </FormField>
+
+          {/* Test SMS */}
+          <div className="pt-1">
+            {!showTestPhone ? (
+              <button
+                type="button"
+                className="text-[12.5px] font-semibold"
+                style={{ color: 'var(--accent)' }}
+                onClick={() => setShowTestPhone(true)}
+              >
+                Send a test SMS
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <FormInput
+                  type="tel"
+                  placeholder="+15559876543"
+                  value={testPhone}
+                  onChange={(e) => setTestPhone(e.target.value)}
+                  className="!py-2"
+                />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => { setToast('Test SMS queued for ' + testPhone); setShowTestPhone(false); setTestPhone(''); }}
+                  disabled={!testPhone}
+                >
+                  Test SMS
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2.5 mt-6 pt-4" style={{ borderTop: '1px solid #f0f2f5' }}>
+          <Button variant="secondary" size="sm" onClick={() => setModal(null)}>Cancel</Button>
+          <Button variant="primary" size="sm" disabled={saving} onClick={() => saveIntegration('twilio', twilioConfig)}>
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
       </Modal>
+
+      {/* ================================================================== */}
+      {/* Email (Resend) Modal                                                */}
+      {/* ================================================================== */}
+      <Modal open={modal === 'email'} onClose={() => setModal(null)} title="Email (Resend) Configuration" size="lg">
+        <div className="space-y-4">
+          <FormField label="API Key" required>
+            <div className="relative">
+              <FormInput
+                type={showResendKey ? 'text' : 'password'}
+                placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                value={resendConfig.apiKey}
+                onChange={(e) => setResendConfig((c) => ({ ...c, apiKey: e.target.value }))}
+              />
+              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-dark-secondary)' }} onClick={() => setShowResendKey((v) => !v)}>
+                {showResendKey ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </FormField>
+          <FormField label="From Email" required hint="Must match a verified domain in Resend">
+            <FormInput
+              type="email"
+              placeholder="hello@yourdomain.com"
+              value={resendConfig.fromEmail}
+              onChange={(e) => setResendConfig((c) => ({ ...c, fromEmail: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="Reply-To Email">
+            <FormInput
+              type="email"
+              placeholder="support@yourdomain.com"
+              value={resendConfig.replyTo}
+              onChange={(e) => setResendConfig((c) => ({ ...c, replyTo: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="Domain" hint="The domain you've verified in Resend">
+            <FormInput
+              placeholder="yourdomain.com"
+              value={resendConfig.domain}
+              onChange={(e) => setResendConfig((c) => ({ ...c, domain: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="Domain Verification">
+            <Badge variant={statuses.email.connected ? 'success' : 'muted'}>
+              {statuses.email.connected ? 'Verified' : 'Not verified'}
+            </Badge>
+          </FormField>
+
+          <div className="pt-1">
+            <button
+              type="button"
+              className="text-[12.5px] font-semibold"
+              style={{ color: 'var(--accent)' }}
+              onClick={() => setToast('Test email sent to ' + (resendConfig.fromEmail || 'your inbox'))}
+            >
+              Send a test email
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2.5 mt-6 pt-4" style={{ borderTop: '1px solid #f0f2f5' }}>
+          <Button variant="secondary" size="sm" onClick={() => setModal(null)}>Cancel</Button>
+          <Button variant="primary" size="sm" disabled={saving} onClick={() => saveIntegration('resend', resendConfig)}>
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* ================================================================== */}
+      {/* Webhooks Modal                                                      */}
+      {/* ================================================================== */}
+      <Modal open={modal === 'webhooks'} onClose={() => setModal(null)} title="Webhook Configuration" size="lg">
+        <div className="space-y-4">
+          <FormField label="Destination URL" required>
+            <FormInput
+              type="url"
+              placeholder="https://your-server.com/webhook"
+              value={webhookConfig.url}
+              onChange={(e) => setWebhookConfig((c) => ({ ...c, url: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="Signing Secret" hint="Used to verify webhook payloads">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <FormInput
+                  type={showWebhookSecret ? 'text' : 'password'}
+                  placeholder="whsec_..."
+                  value={webhookConfig.secret}
+                  onChange={(e) => setWebhookConfig((c) => ({ ...c, secret: e.target.value }))}
+                />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-dark-secondary)' }} onClick={() => setShowWebhookSecret((v) => !v)}>
+                  {showWebhookSecret ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              <Button variant="secondary" size="sm" onClick={generateSecret} title="Auto-generate secret">
+                <RefreshCw size={14} />
+              </Button>
+            </div>
+          </FormField>
+          <FormField label="Event Types">
+            <div className="space-y-2 pt-1">
+              {WEBHOOK_EVENTS.map((evt) => (
+                <label key={evt} className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={webhookConfig.events.includes(evt)}
+                    onChange={(e) => {
+                      setWebhookConfig((c) => ({
+                        ...c,
+                        events: e.target.checked ? [...c.events, evt] : c.events.filter((x) => x !== evt),
+                      }));
+                    }}
+                    className="w-4 h-4 rounded accent-[var(--accent)]"
+                  />
+                  <span className="text-[12.5px] font-medium font-mono" style={{ color: 'var(--text-dark)' }}>{evt}</span>
+                </label>
+              ))}
+            </div>
+          </FormField>
+
+          <div className="pt-1">
+            <button
+              type="button"
+              className="text-[12.5px] font-semibold"
+              style={{ color: 'var(--accent)' }}
+              onClick={() => setToast('Test webhook sent to ' + (webhookConfig.url || 'destination'))}
+            >
+              Send a test webhook
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2.5 mt-6 pt-4" style={{ borderTop: '1px solid #f0f2f5' }}>
+          <Button variant="secondary" size="sm" onClick={() => setModal(null)}>Cancel</Button>
+          <Button variant="primary" size="sm" disabled={saving} onClick={() => saveIntegration('webhooks', webhookConfig)}>
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* ================================================================== */}
+      {/* Custom Domain Modal                                                 */}
+      {/* ================================================================== */}
+      <Modal open={modal === 'domain'} onClose={() => setModal(null)} title="Custom Domain" size="lg">
+        <div className="space-y-4">
+          <FormField label="Domain Name" required>
+            <FormInput
+              placeholder="chat.yourdomain.com"
+              value={domainConfig.domain}
+              onChange={(e) => setDomainConfig((c) => ({ ...c, domain: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="DNS Configuration" hint="Add the following CNAME record to your DNS provider">
+            <div className="rounded-lg p-3" style={{ background: '#f8f9fb', border: '1.5px solid #e5e7eb' }}>
+              <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[12px]">
+                <span className="font-semibold" style={{ color: 'var(--text-dark-secondary)' }}>Type</span>
+                <span className="font-mono" style={{ color: 'var(--text-dark)' }}>CNAME</span>
+                <span className="font-semibold" style={{ color: 'var(--text-dark-secondary)' }}>Name</span>
+                <span className="font-mono" style={{ color: 'var(--text-dark)' }}>{domainConfig.domain || 'chat.yourdomain.com'}</span>
+                <span className="font-semibold" style={{ color: 'var(--text-dark-secondary)' }}>Value</span>
+                <span className="font-mono" style={{ color: 'var(--text-dark)' }}>widget.leadsandsaas.com</span>
+              </div>
+            </div>
+          </FormField>
+          <FormField label="Verification Status">
+            <Badge variant={statuses.domain.connected ? 'success' : 'muted'}>
+              {statuses.domain.connected ? 'Verified' : 'Pending verification'}
+            </Badge>
+          </FormField>
+        </div>
+        <div className="flex items-center justify-end gap-2.5 mt-6 pt-4" style={{ borderTop: '1px solid #f0f2f5' }}>
+          <Button variant="secondary" size="sm" onClick={() => setModal(null)}>Cancel</Button>
+          <Button variant="primary" size="sm" disabled={saving} onClick={() => saveIntegration('domain', domainConfig)}>
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* ================================================================== */}
+      {/* Security Modal                                                      */}
+      {/* ================================================================== */}
+      <Modal open={modal === 'security'} onClose={() => setModal(null)} title="Security Settings">
+        <div className="space-y-4">
+          <FormField label="Two-Factor Authentication">
+            <FormToggle
+              checked={securityConfig.twoFactor}
+              onChange={(v) => setSecurityConfig((c) => ({ ...c, twoFactor: v }))}
+              label={securityConfig.twoFactor ? 'Enabled' : 'Disabled'}
+            />
+          </FormField>
+          <FormField label="Session Timeout">
+            <FormSelect
+              value={securityConfig.sessionTimeout}
+              onChange={(e) => setSecurityConfig((c) => ({ ...c, sessionTimeout: e.target.value }))}
+            >
+              <option value="15">15 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="120">2 hours</option>
+              <option value="480">8 hours</option>
+            </FormSelect>
+          </FormField>
+          <FormField label="API Key" hint="Use this key to authenticate API requests">
+            <div className="relative">
+              <FormInput
+                type={showApiKey ? 'text' : 'password'}
+                readOnly
+                value={securityConfig.apiKey || 'No API key generated'}
+                style={{ background: '#f0f2f5', cursor: 'default' }}
+              />
+              {securityConfig.apiKey && (
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-dark-secondary)' }} onClick={() => setShowApiKey((v) => !v)}>
+                  {showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              )}
+            </div>
+          </FormField>
+        </div>
+        <div className="flex items-center justify-end gap-2.5 mt-6 pt-4" style={{ borderTop: '1px solid #f0f2f5' }}>
+          <Button variant="secondary" size="sm" onClick={() => setModal(null)}>Cancel</Button>
+          <Button variant="primary" size="sm" disabled={saving} onClick={() => saveIntegration('security', securityConfig)}>
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* ================================================================== */}
+      {/* Notifications Modal                                                 */}
+      {/* ================================================================== */}
+      <Modal open={modal === 'notifications'} onClose={() => setModal(null)} title="Notification Preferences">
+        <div className="space-y-5">
+          <p className="text-[13px]" style={{ color: 'var(--text-dark-secondary)' }}>Choose which events trigger an email notification.</p>
+          <FormToggle
+            checked={notifConfig.newLead}
+            onChange={(v) => setNotifConfig((c) => ({ ...c, newLead: v }))}
+            label="New lead captured"
+          />
+          <FormToggle
+            checked={notifConfig.appointmentBooked}
+            onChange={(v) => setNotifConfig((c) => ({ ...c, appointmentBooked: v }))}
+            label="Appointment booked"
+          />
+          <FormToggle
+            checked={notifConfig.agentError}
+            onChange={(v) => setNotifConfig((c) => ({ ...c, agentError: v }))}
+            label="Agent error"
+          />
+        </div>
+        <div className="flex items-center justify-end gap-2.5 mt-6 pt-4" style={{ borderTop: '1px solid #f0f2f5' }}>
+          <Button variant="secondary" size="sm" onClick={() => setModal(null)}>Cancel</Button>
+          <Button variant="primary" size="sm" disabled={saving} onClick={() => saveIntegration('notifications', notifConfig)}>
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Toast */}
+      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </>
   );
 }

@@ -45,6 +45,14 @@ const VERTICALS = [
   { value: 'general', label: 'General' },
 ];
 
+const RESPONSE_STYLES = [
+  { value: 'professional', label: 'Professional' },
+  { value: 'friendly', label: 'Friendly' },
+  { value: 'casual', label: 'Casual' },
+  { value: 'urgent', label: 'Urgent' },
+  { value: 'empathetic', label: 'Empathetic' },
+];
+
 const VC: Record<string,string> = { hvac:'#3b82f6', roofing:'#f97316', med_spa:'#d946ef', dental:'#06b6d4', plumbing:'#10b981', electrical:'#eab308', legal:'#6366f1', real_estate:'#ec4899', auto_repair:'#f43f5e', landscaping:'#22c55e', cleaning:'#14b8a6', general:'#8b5cf6' };
 
 function Mini({ icon, value, label }: { icon: React.ReactNode; value: string|number; label: string }) {
@@ -83,6 +91,11 @@ export default function AgentsPage() {
   const [configEmail, setConfigEmail] = useState(false);
   const [configDelay, setConfigDelay] = useState(5);
   const [configMaxFollowups, setConfigMaxFollowups] = useState(3);
+  const [configPrompt, setConfigPrompt] = useState('');
+  const [configStyle, setConfigStyle] = useState('professional');
+  const [configCanBook, setConfigCanBook] = useState(false);
+  const [configCanDiscount, setConfigCanDiscount] = useState(false);
+  const [configEscalation, setConfigEscalation] = useState('');
 
   function resetCreateForm() {
     setCreateName('');
@@ -115,6 +128,23 @@ export default function AgentsPage() {
     setModal(null);
     resetCreateForm();
     showToast(`Agent "${newAgent.name}" created successfully`);
+
+    // Fire-and-forget API call
+    fetch('/api/agents/configure', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agent_id: newAgent.id,
+        name: createName,
+        description: createDesc,
+        vertical: createVertical,
+        status: createStatus,
+        channels: {
+          sms: { enabled: createSms },
+          email: { enabled: createEmail },
+        },
+      }),
+    }).catch(() => {});
   }
 
   function openConfigure(agent: Agent) {
@@ -126,6 +156,11 @@ export default function AgentsPage() {
     setConfigEmail(agent.email);
     setConfigDelay(5);
     setConfigMaxFollowups(3);
+    setConfigPrompt('');
+    setConfigStyle('professional');
+    setConfigCanBook(false);
+    setConfigCanDiscount(false);
+    setConfigEscalation('');
     setModal('configure');
   }
 
@@ -137,16 +172,50 @@ export default function AgentsPage() {
         : a
     ));
     setModal(null);
-    setConfigureAgentId(null);
     showToast('Agent configuration saved');
+
+    // Fire-and-forget API call
+    fetch('/api/agents/configure', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agent_id: configureAgentId,
+        name: configName,
+        description: configDesc,
+        vertical: configVertical,
+        channels: {
+          sms: { enabled: configSms },
+          email: { enabled: configEmail },
+        },
+        system_prompt_override: configPrompt || null,
+        personality: { tone: configStyle },
+        rules: {
+          can_book_appointments: configCanBook,
+          can_offer_discounts: configCanDiscount,
+          escalation_triggers: configEscalation.split(',').map(s => s.trim()).filter(Boolean),
+          max_follow_ups: configMaxFollowups,
+          follow_up_cadence_hours: [],
+        },
+      }),
+    }).catch(() => {});
+
+    setConfigureAgentId(null);
   }
 
   function toggleAgentStatus(agentId: string) {
+    let newStatus: AgentStatus = 'active';
     setAgents(prev => prev.map(a => {
       if (a.id !== agentId) return a;
-      const newStatus: AgentStatus = a.status === 'active' ? 'paused' : 'active';
+      newStatus = a.status === 'active' ? 'paused' : 'active';
       return { ...a, status: newStatus };
     }));
+
+    // Fire-and-forget API call
+    fetch('/api/agents/configure', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agent_id: agentId, status: newStatus }),
+    }).catch(() => {});
   }
 
   function showToast(message: string) {
@@ -268,11 +337,44 @@ export default function AgentsPage() {
           <FormField label="Description">
             <FormTextarea rows={2} value={configDesc} onChange={e => setConfigDesc(e.target.value)} />
           </FormField>
+          <FormField label="Prompt Template">
+            <FormTextarea rows={4} placeholder="You are a helpful sales agent..." value={configPrompt} onChange={e => setConfigPrompt(e.target.value)} />
+          </FormField>
+          <FormField label="Response Style">
+            <FormSelect value={configStyle} onChange={e => setConfigStyle(e.target.value)}>
+              {RESPONSE_STYLES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </FormSelect>
+          </FormField>
           <FormField label="Channels">
             <div className="flex items-center gap-6 pt-1">
               <FormToggle checked={configSms} onChange={setConfigSms} label="SMS" />
               <FormToggle checked={configEmail} onChange={setConfigEmail} label="Email" />
             </div>
+          </FormField>
+          <FormField label="Active / Paused">
+            <div className="flex items-center gap-6 pt-1">
+              <FormToggle
+                checked={agents.find(a => a.id === configureAgentId)?.status === 'active'}
+                onChange={(checked) => {
+                  if (configureAgentId) {
+                    const newStatus: AgentStatus = checked ? 'active' : 'paused';
+                    setAgents(prev => prev.map(a =>
+                      a.id === configureAgentId ? { ...a, status: newStatus } : a
+                    ));
+                  }
+                }}
+                label={agents.find(a => a.id === configureAgentId)?.status === 'active' ? 'Active' : 'Paused'}
+              />
+            </div>
+          </FormField>
+          <FormField label="Capabilities">
+            <div className="flex items-center gap-6 pt-1">
+              <FormToggle checked={configCanBook} onChange={setConfigCanBook} label="Can Book Appointments" />
+              <FormToggle checked={configCanDiscount} onChange={setConfigCanDiscount} label="Can Offer Discounts" />
+            </div>
+          </FormField>
+          <FormField label="Escalation Triggers" hint="Comma-separated keywords that trigger escalation">
+            <FormTextarea rows={2} placeholder="angry, lawsuit, complaint, refund" value={configEscalation} onChange={e => setConfigEscalation(e.target.value)} />
           </FormField>
           <FormField label="Response Delay" hint={`Agent will wait ${configDelay} second${configDelay !== 1 ? 's' : ''} before responding`}>
             <div className="flex items-center gap-3">

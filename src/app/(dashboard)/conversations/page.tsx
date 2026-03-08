@@ -12,7 +12,7 @@ const CONVOS = [
   { id: '4', name: 'Lisa Rodriguez', phone: '+1 (555) 567-8901', ch: 'sms' as const, agent: 'HVAC Sales Pro', msg: 'What makes you different?', time: '22m', unread: false, status: 'nurturing', score: 55, ai: false },
 ];
 
-type Msg = { id: string; dir: 'in' | 'out'; type: string; body: string; time: string; actions?: string[]; queued?: boolean };
+type Msg = { id: string; dir: 'in' | 'out'; type: string; body: string; time: string; actions?: string[]; queued?: boolean; status?: 'sending' | 'sent' | 'failed' };
 
 const INITIAL_MSGS: Msg[] = [
   { id: '1', dir: 'in', type: 'lead', body: "Hi, my AC isn't cooling at all and it's 95 degrees. Can someone come look at it?", time: '10:42 AM' },
@@ -35,6 +35,7 @@ export default function ConversationsPage() {
   const [aiPaused, setAiPaused] = useState<Record<string, boolean>>({});
   const [operatorMode, setOperatorMode] = useState(false);
   const [bookModal, setBookModal] = useState(false);
+  const [bookSuccess, setBookSuccess] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   // Booking form state
@@ -55,21 +56,50 @@ export default function ConversationsPage() {
     if (window.innerWidth >= 768 && !selId) setSelId(CONVOS[0].id);
   }, []);
 
-  function handleSend() {
+  async function retrySend(msg: Msg) {
+    setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, status: 'sending' } : m));
+    try {
+      const res = await fetch('/api/conversations/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: selId, message: msg.body, channel: sel?.ch }),
+      });
+      if (!res.ok) throw new Error('Send failed');
+      setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, status: 'sent', queued: false } : m));
+    } catch {
+      setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, status: 'failed' } : m));
+    }
+  }
+
+  async function handleSend() {
     if (!humanMsg.trim()) return;
+    const msgId = String(Date.now());
     const newMsg: Msg = {
-      id: String(Date.now()),
+      id: msgId,
       dir: 'out',
       type: 'human',
       body: humanMsg.trim(),
       time: nowTime(),
-      queued: true,
+      status: 'sending',
     };
     setMessages((prev) => [...prev, newMsg]);
+    const msgBody = humanMsg.trim();
     setHumanMsg('');
     if (selId && !isPaused) {
       setAiPaused((prev) => ({ ...prev, [selId]: true }));
       setOperatorMode(true);
+    }
+
+    try {
+      const res = await fetch('/api/conversations/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: selId, message: msgBody, channel: sel?.ch }),
+      });
+      if (!res.ok) throw new Error('Send failed');
+      setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, status: 'sent', queued: false } : m));
+    } catch {
+      setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, status: 'failed' } : m));
     }
   }
 
@@ -78,19 +108,39 @@ export default function ConversationsPage() {
     const willPause = !isPaused;
     setAiPaused((prev) => ({ ...prev, [selId]: willPause }));
     if (!willPause) setOperatorMode(false);
+
+    fetch('/api/conversations/takeover', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversation_id: selId, takeover: willPause }),
+    });
   }
 
   function handleTakeover() {
     if (operatorMode) {
       setOperatorMode(false);
-      if (selId) setAiPaused((prev) => ({ ...prev, [selId]: false }));
+      if (selId) {
+        setAiPaused((prev) => ({ ...prev, [selId]: false }));
+        fetch('/api/conversations/takeover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversation_id: selId, takeover: false }),
+        });
+      }
     } else {
       setOperatorMode(true);
-      if (selId) setAiPaused((prev) => ({ ...prev, [selId]: true }));
+      if (selId) {
+        setAiPaused((prev) => ({ ...prev, [selId]: true }));
+        fetch('/api/conversations/takeover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversation_id: selId, takeover: true }),
+        });
+      }
     }
   }
 
-  function handleBookSubmit(e: React.FormEvent) {
+  async function handleBookSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!bookDate || !bookTime) return;
     const apptMsg: Msg = {
@@ -102,12 +152,37 @@ export default function ConversationsPage() {
     };
     setMessages((prev) => [...prev, apptMsg]);
     setBookModal(false);
+
+    fetch('/api/appointments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: bookService || 'Appointment',
+        lead_id: selId,
+        service_type: bookService,
+        starts_at: new Date(bookDate + 'T' + bookTime).toISOString(),
+        ends_at: new Date(new Date(bookDate + 'T' + bookTime).getTime() + parseInt(bookDuration) * 60000).toISOString(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        conversation_id: selId,
+        notes: bookNotes,
+      }),
+    });
+
+    setBookSuccess(true);
+    setTimeout(() => setBookSuccess(false), 3000);
+
     setBookService(''); setBookDate(''); setBookTime(''); setBookDuration('30'); setBookNotes('');
   }
 
   return (
     <>
       <TopBar title="Conversations" subtitle={`${CONVOS.length} active`} />
+
+      {bookSuccess && (
+        <div className="fixed top-4 right-4 z-[100] px-4 py-2.5 rounded-lg text-[13px] font-medium animate-fade-in" style={{ background: 'var(--success)', color: '#fff' }}>
+          Appointment booked successfully
+        </div>
+      )}
 
       <div className="flex-1 flex overflow-hidden relative" style={{ height: 'calc(100vh - 56px)' }}>
         {/* LEFT: Conversation list */}
@@ -220,7 +295,10 @@ export default function ConversationsPage() {
                         <span className="text-[10px] md:text-[10.5px]" style={{ color: 'var(--text-dark-secondary)' }}>{m.time}</span>
                         {m.dir === 'out' && m.type === 'ai' && <span className="flex items-center gap-0.5 text-[10px] badge-inline" style={{ color: 'var(--accent)' }}><Bot size={10} /> AI</span>}
                         {m.dir === 'out' && m.type === 'human' && <span className="flex items-center gap-0.5 text-[10px] badge-inline" style={{ color: 'var(--info)' }}><User size={10} /> You</span>}
-                        {m.queued && <span className="text-[9px] italic" style={{ color: 'var(--text-dark-secondary)' }}>Queued — connect channels to deliver</span>}
+                        {m.status === 'sending' && <span className="text-[9px] italic" style={{ color: 'var(--text-dark-secondary)' }}>Sending...</span>}
+                        {m.status === 'sent' && <span className="text-[9px] font-medium" style={{ color: 'var(--success)' }}>&#10003; Sent</span>}
+                        {m.status === 'failed' && <button onClick={() => retrySend(m)} className="text-[9px] font-medium cursor-pointer hover:underline" style={{ color: 'var(--danger)', background: 'none', border: 'none', padding: 0 }}>Failed — tap to retry</button>}
+                        {m.queued && !m.status && <span className="text-[9px] italic" style={{ color: 'var(--text-dark-secondary)' }}>Queued — connect channels to deliver</span>}
                       </div>
                       {m.dir === 'out' && m.actions && (
                         <div className="flex flex-wrap gap-1 mt-1.5 px-1">
