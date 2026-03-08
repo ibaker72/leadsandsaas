@@ -195,7 +195,7 @@ export function SkeletonRow() {
 // Avatar — consistent identity anchors across pages
 // ---------------------------------------------------------------------------
 
-const AVATAR_COLORS = [
+const AVATAR_COLORS: [string, string][] = [
   ['#6366f1', '#818cf8'], ['#8b5cf6', '#a78bfa'], ['#d946ef', '#e879f9'],
   ['#ec4899', '#f472b6'], ['#f59e0b', '#fbbf24'], ['#10b981', '#34d399'],
   ['#3b82f6', '#60a5fa'], ['#06b6d4', '#22d3ee'], ['#f97316', '#fb923c'],

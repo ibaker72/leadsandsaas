@@ -77,7 +77,7 @@ export default function OverviewPage() {
             <MiniChart />
           </Card>
 
-          <Card className="lg:col-span-2 animate-fade-in opacity-0 stagger-4" padding={false} style={{ animationFillMode: 'forwards' }}>
+          <Card className="lg:col-span-2 animate-fade-in opacity-0 stagger-4 [animation-fill-mode:forwards]" padding={false}>
             <div className="p-4 md:p-5 pb-3">
               <SectionHeader
                 title="Agent Performance"
@@ -114,7 +114,7 @@ export default function OverviewPage() {
 
         {/* Live + Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          <Card padding={false} className="animate-fade-in opacity-0 stagger-5" style={{ animationFillMode: 'forwards' }}>
+          <Card padding={false} className="animate-fade-in opacity-0 stagger-5 [animation-fill-mode:forwards]">
             <div className="p-4 md:p-5 pb-3">
               <SectionHeader
                 title="Live Conversations"
@@ -145,7 +145,7 @@ export default function OverviewPage() {
             </div>
           </Card>
 
-          <Card padding={false} className="animate-fade-in opacity-0 stagger-6" style={{ animationFillMode: 'forwards' }}>
+          <Card padding={false} className="animate-fade-in opacity-0 stagger-6 [animation-fill-mode:forwards]">
             <div className="p-4 md:p-5 pb-3">
               <SectionHeader title="Recent Activity" action={<Activity size={15} style={{ color: 'var(--text-dark-secondary)' }} />} />
             </div>
