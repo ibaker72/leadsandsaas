@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { TopBar } from '@/components/dashboard/sidebar';
 import { Badge, Button, LEAD_STATUS_VARIANT, Avatar, LiveIndicator } from '@/components/ui/primitives';
-import { Search, Bot, User, Send, Phone, Mail, Pause, Play, ChevronLeft, Calendar, Info, Sparkles } from 'lucide-react';
+import { Search, Bot, User, Send, Phone, Mail, Pause, Play, ChevronLeft, Calendar, Info, Sparkles, MessageSquare } from 'lucide-react';
 
 const CONVOS = [
   { id: '1', name: 'Sarah Mitchell', phone: '+1 (555) 234-5678', ch: 'sms' as const, agent: 'HVAC Sales Pro', msg: 'Yes, I need my AC looked at ASAP.', time: '2m', unread: true, status: 'contacted', score: 72, ai: true },
