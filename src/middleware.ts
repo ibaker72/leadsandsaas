@@ -9,6 +9,8 @@ const PUBLIC_ROUTES = [
   '/update-password',
   '/api/auth/callback',
   '/api/auth/signup',     // authenticated but handles its own auth check
+  '/privacy',
+  '/terms',
   '/api/leads/capture',
   '/api/webhooks',
 ];

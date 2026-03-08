@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomBytes } from 'crypto';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -83,6 +84,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. Create organization (admin client, bypasses RLS)
+    const captureKey = randomBytes(16).toString('hex');
     const { data: org, error: orgError } = await admin
       .from('organizations')
       .insert({
@@ -91,6 +93,7 @@ export async function POST(req: NextRequest) {
         vertical: vertical as string,
         plan: 'trial',
         trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        capture_key: captureKey,
       })
       .select('id')
       .single();

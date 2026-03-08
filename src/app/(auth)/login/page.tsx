@@ -107,7 +107,10 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-[11px] mt-6" style={{ color: 'var(--text-muted)' }}>
-          By signing in, you agree to our Terms of Service and Privacy Policy.
+          By signing in, you agree to our{' '}
+          <Link href="/terms" className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Terms of Service</Link>
+          {' '}and{' '}
+          <Link href="/privacy" className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Privacy Policy</Link>.
         </p>
       </div>
     </div>
