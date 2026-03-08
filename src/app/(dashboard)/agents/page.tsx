@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TopBar } from '@/components/dashboard/sidebar';
 import { Badge, Button, Card, AGENT_STATUS_VARIANT, LiveIndicator, Modal, FormField, FormInput, FormSelect, FormTextarea, FormToggle } from '@/components/ui/primitives';
 import { Bot, Plus, Play, Pause, Settings, MessageSquare, Calendar, TrendingUp, Clock, Zap, Phone, Mail, BookOpen, CheckCircle } from 'lucide-react';
@@ -22,13 +22,6 @@ interface Agent {
   rate: number;
   last: string;
 }
-
-const INITIAL_AGENTS: Agent[] = [
-  { id:'1', name:'HVAC Sales Pro', desc:'AC/heating inquiries, qualifies leads, books service calls.', vertical:'hvac', status:'active', sms:true, email:true, kb:8, convos:156, booked:34, converted:18, time:'28s', rate:11.5, last:'2m ago' },
-  { id:'2', name:'Roofing Lead Closer', desc:'Storm damage, insurance claims, inspection scheduling.', vertical:'roofing', status:'active', sms:true, email:true, kb:12, convos:89, booked:22, converted:11, time:'32s', rate:12.4, last:'5m ago' },
-  { id:'3', name:'Med Spa Concierge', desc:'Warm consultative approach for treatment inquiries.', vertical:'med_spa', status:'active', sms:true, email:true, kb:15, convos:203, booked:67, converted:41, time:'24s', rate:20.2, last:'1m ago' },
-  { id:'4', name:'Dental Intake Bot', desc:'New patient inquiries, insurance, cleaning scheduling.', vertical:'dental', status:'draft', sms:false, email:true, kb:3, convos:0, booked:0, converted:0, time:'-', rate:0, last:'Never' },
-];
 
 const VERTICALS = [
   { value: 'hvac', label: 'HVAC' },
@@ -68,8 +61,30 @@ function Mini({ icon, value, label }: { icon: React.ReactNode; value: string|num
   );
 }
 
+function mapAgent(a: Record<string, unknown>): Agent {
+  const channels = (a.channels || {}) as Record<string, Record<string, unknown>>;
+  const stats = (a.stats || {}) as Record<string, unknown>;
+  return {
+    id: a.id as string,
+    name: (a.name as string) || 'Untitled',
+    desc: (a.description as string) || '',
+    vertical: (a.vertical as string) || 'general',
+    status: (a.status as AgentStatus) || 'draft',
+    sms: !!channels?.sms?.enabled,
+    email: !!channels?.email?.enabled,
+    kb: 0,
+    convos: Number(stats?.total_conversations) || 0,
+    booked: Number(stats?.total_appointments_booked) || 0,
+    converted: Number(stats?.total_leads_converted) || 0,
+    time: stats?.avg_response_time_seconds ? `${stats.avg_response_time_seconds}s` : '-',
+    rate: 0,
+    last: 'N/A',
+  };
+}
+
 export default function AgentsPage() {
-  const [agents, setAgents] = useState<Agent[]>(INITIAL_AGENTS);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<'create' | 'configure' | null>(null);
   const [configureAgentId, setConfigureAgentId] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
@@ -97,6 +112,18 @@ export default function AgentsPage() {
   const [configCanDiscount, setConfigCanDiscount] = useState(false);
   const [configEscalation, setConfigEscalation] = useState('');
 
+  useEffect(() => {
+    fetch('/api/agents')
+      .then(r => r.json())
+      .then(data => {
+        if (data.agents) {
+          setAgents(data.agents.map((a: Record<string, unknown>) => mapAgent(a)));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
   function resetCreateForm() {
     setCreateName('');
     setCreateVertical('general');
@@ -107,44 +134,27 @@ export default function AgentsPage() {
     setCreateGreeting('');
   }
 
-  function handleCreateSubmit() {
-    const newAgent: Agent = {
-      id: String(Date.now()),
-      name: createName || 'Untitled Agent',
-      desc: createDesc || 'No description provided.',
-      vertical: createVertical,
-      status: createStatus,
-      sms: createSms,
-      email: createEmail,
-      kb: 0,
-      convos: 0,
-      booked: 0,
-      converted: 0,
-      time: '-',
-      rate: 0,
-      last: 'Never',
-    };
-    setAgents(prev => [...prev, newAgent]);
-    setModal(null);
-    resetCreateForm();
-    showToast(`Agent "${newAgent.name}" created successfully`);
-
-    // Fire-and-forget API call
-    fetch('/api/agents/configure', {
-      method: 'PATCH',
+  async function handleCreateSubmit() {
+    const res = await fetch('/api/agents', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        agent_id: newAgent.id,
-        name: createName,
+        name: createName || 'Untitled Agent',
         description: createDesc,
         vertical: createVertical,
         status: createStatus,
-        channels: {
-          sms: { enabled: createSms },
-          email: { enabled: createEmail },
-        },
       }),
-    }).catch(() => {});
+    }).catch(() => null);
+
+    if (res) {
+      const data = await res.json();
+      if (data.agent) {
+        setAgents(prev => [mapAgent(data.agent), ...prev]);
+        showToast(`Agent "${data.agent.name}" created successfully`);
+      }
+    }
+    setModal(null);
+    resetCreateForm();
   }
 
   function openConfigure(agent: Agent) {
@@ -174,7 +184,6 @@ export default function AgentsPage() {
     setModal(null);
     showToast('Agent configuration saved');
 
-    // Fire-and-forget API call
     fetch('/api/agents/configure', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -210,7 +219,6 @@ export default function AgentsPage() {
       return { ...a, status: newStatus };
     }));
 
-    // Fire-and-forget API call
     fetch('/api/agents/configure', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -232,6 +240,28 @@ export default function AgentsPage() {
         <div className="flex items-center justify-end">
           <Button variant="primary" size="md" onClick={() => { resetCreateForm(); setModal('create'); }}><Plus size={15}/> New Agent</Button>
         </div>
+
+        {loading && (
+          <div className="space-y-4">
+            {[1,2,3].map(i => (
+              <Card key={i} className="animate-pulse">
+                <div className="h-24 rounded" style={{ background: '#f0f2f5' }} />
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {!loading && agents.length === 0 && (
+          <Card className="animate-fade-in">
+            <div className="text-center py-12">
+              <Bot size={40} style={{ color: '#e2e5eb' }} className="mx-auto mb-3" />
+              <p className="text-[15px] font-semibold mb-1" style={{ color: 'var(--text-dark)' }}>No agents yet</p>
+              <p className="text-[13px] mb-4" style={{ color: 'var(--text-dark-secondary)' }}>Create your first AI agent to start automating conversations.</p>
+              <Button variant="primary" size="md" onClick={() => { resetCreateForm(); setModal('create'); }}><Plus size={15}/> New Agent</Button>
+            </div>
+          </Card>
+        )}
+
         {agents.map(a => {
           const vc = VC[a.vertical]||'#8b5cf6';
           return (
@@ -247,7 +277,7 @@ export default function AgentsPage() {
                         <Badge variant={AGENT_STATUS_VARIANT[a.status]} dot>{a.status}</Badge>
                         {a.status === 'active' && <LiveIndicator />}
                       </div>
-                      <p className="text-[12px] md:text-[12.5px] mt-1 line-clamp-2" style={{ color:'var(--text-dark-secondary)' }}>{a.desc}</p>
+                      <p className="text-[12px] md:text-[12.5px] mt-1 line-clamp-2" style={{ color:'var(--text-dark-secondary)' }}>{a.desc || 'No description'}</p>
                     </div>
                   </div>
                   <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">

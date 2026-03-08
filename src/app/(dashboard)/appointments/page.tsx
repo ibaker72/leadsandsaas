@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TopBar } from '@/components/dashboard/sidebar';
 import { Badge, Button, Card, EmptyState, Modal, FormField, FormInput, FormSelect, FormTextarea, Avatar } from '@/components/ui/primitives';
 import { Calendar, Plus, Clock, User, CheckCircle, X, Bot, ChevronDown, ChevronUp } from 'lucide-react';
@@ -18,6 +18,8 @@ type Appointment = {
   status: AppointmentStatus;
   agent: string;
   notes: string;
+  lead_id?: string;
+  agent_id?: string;
 };
 
 const STATUS_VARIANT: Record<AppointmentStatus, 'info' | 'success' | 'danger' | 'warning'> = {
@@ -45,14 +47,6 @@ const DURATION_OPTIONS = [
   { value: 120, label: '2 hours' },
 ];
 
-const AGENT_OPTIONS = ['HVAC Sales Pro', 'Roofing Lead Closer', 'Med Spa Concierge', 'Dental Intake Bot'];
-
-const INITIAL_APPOINTMENTS: Appointment[] = [
-  { id: '1', title: 'AC Inspection', client: 'Sarah Mitchell', service: 'AC Repair', date: '2026-03-09', time: '14:00', duration: 60, status: 'scheduled', agent: 'HVAC Sales Pro', notes: 'Customer reports no cooling' },
-  { id: '2', title: 'Roof Assessment', client: 'Marcus Johnson', service: 'Full Replacement', date: '2026-03-10', time: '10:00', duration: 90, status: 'confirmed', agent: 'Roofing Lead Closer', notes: 'Insurance claim in progress' },
-  { id: '3', title: 'Botox Consultation', client: 'Emily Davis', service: 'Botox', date: '2026-03-11', time: '11:30', duration: 30, status: 'scheduled', agent: 'Med Spa Concierge', notes: 'First-time client referral' },
-];
-
 function formatDate(date: string): string {
   const d = new Date(date + 'T00:00:00');
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -70,7 +64,9 @@ function formatDuration(mins: number): string {
 }
 
 export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [agentOptions, setAgentOptions] = useState<{id: string; name: string}[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
@@ -82,9 +78,47 @@ export default function AppointmentsPage() {
   const [formDate, setFormDate] = useState('');
   const [formTime, setFormTime] = useState('');
   const [formDuration, setFormDuration] = useState(60);
-  const [formAgent, setFormAgent] = useState(AGENT_OPTIONS[0]);
+  const [formAgent, setFormAgent] = useState('');
   const [formNotes, setFormNotes] = useState('');
   const [formStatus, setFormStatus] = useState<'scheduled' | 'confirmed'>('scheduled');
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/appointments').then(r => r.json()),
+      fetch('/api/agents').then(r => r.json()),
+    ]).then(([apptData, agentsData]) => {
+      const agentMap = new Map<string, string>();
+      const opts: {id: string; name: string}[] = [];
+      (agentsData.agents || []).forEach((a: Record<string, unknown>) => {
+        agentMap.set(a.id as string, a.name as string);
+        opts.push({ id: a.id as string, name: a.name as string });
+      });
+      setAgentOptions(opts);
+
+      if (apptData.appointments) {
+        setAppointments(apptData.appointments.map((a: Record<string, unknown>) => {
+          const startsAt = new Date(a.starts_at as string);
+          const endsAt = new Date(a.ends_at as string);
+          const durationMins = Math.round((endsAt.getTime() - startsAt.getTime()) / 60000);
+          return {
+            id: a.id as string,
+            title: (a.title as string) || 'Appointment',
+            client: (a.lead_name as string) || 'Unknown',
+            service: (a.service_type as string) || '',
+            date: startsAt.toISOString().split('T')[0],
+            time: startsAt.toTimeString().slice(0, 5),
+            duration: durationMins > 0 ? durationMins : 60,
+            status: (a.status as AppointmentStatus) || 'scheduled',
+            agent: a.agent_id ? (agentMap.get(a.agent_id as string) || 'Unassigned') : 'Unassigned',
+            notes: (a.notes as string) || '',
+            lead_id: (a.lead_id as string) || undefined,
+            agent_id: (a.agent_id as string) || undefined,
+          };
+        }));
+      }
+    }).catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   function resetForm() {
     setFormTitle('');
@@ -93,7 +127,7 @@ export default function AppointmentsPage() {
     setFormDate('');
     setFormTime('');
     setFormDuration(60);
-    setFormAgent(AGENT_OPTIONS[0]);
+    setFormAgent('');
     setFormNotes('');
     setFormStatus('scheduled');
   }
@@ -103,12 +137,16 @@ export default function AppointmentsPage() {
     setTimeout(() => setSuccessToast(null), 3000);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!formTitle.trim() || !formClient.trim() || !formDate || !formTime) return;
 
+    const startsAt = new Date(formDate + 'T' + formTime).toISOString();
+    const endsAt = new Date(new Date(formDate + 'T' + formTime).getTime() + formDuration * 60000).toISOString();
+    const tempId = String(Date.now());
+
     const newAppointment: Appointment = {
-      id: String(Date.now()),
+      id: tempId,
       title: formTitle.trim(),
       client: formClient.trim(),
       service: formService.trim(),
@@ -116,29 +154,47 @@ export default function AppointmentsPage() {
       time: formTime,
       duration: formDuration,
       status: formStatus,
-      agent: formAgent,
+      agent: agentOptions.find(a => a.id === formAgent)?.name || 'Unassigned',
       notes: formNotes.trim(),
     };
 
-    // Optimistic UI update
     setAppointments((prev) => [newAppointment, ...prev]);
     resetForm();
     setShowModal(false);
     showToast('Appointment created successfully');
 
-    // Fire API call
-    fetch('/api/appointments', {
+    const res = await fetch('/api/appointments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newAppointment),
-    }).catch(() => {
-      // silently handle — optimistic update already applied
-    });
+      body: JSON.stringify({
+        title: newAppointment.title,
+        lead_id: null,
+        service_type: newAppointment.service,
+        starts_at: startsAt,
+        ends_at: endsAt,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        agent_id: formAgent || null,
+        notes: newAppointment.notes,
+        status: formStatus,
+      }),
+    }).catch(() => null);
+
+    if (res) {
+      const data = await res.json();
+      if (data.appointment) {
+        setAppointments(prev => prev.map(a => a.id === tempId ? { ...a, id: data.appointment.id as string } : a));
+      }
+    }
   }
 
   function updateStatus(id: string, status: AppointmentStatus) {
     setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
     showToast(`Appointment ${STATUS_LABELS[status].toLowerCase()}`);
+    fetch(`/api/appointments/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }).catch(() => {});
   }
 
   const sorted = [...appointments].sort((a, b) => {
@@ -177,8 +233,19 @@ export default function AppointmentsPage() {
           </Button>
         </div>
 
+        {/* Loading */}
+        {loading && (
+          <div className="space-y-3">
+            {[1,2,3].map(i => (
+              <Card key={i} className="animate-pulse">
+                <div className="h-16 rounded" style={{ background: '#f0f2f5' }} />
+              </Card>
+            ))}
+          </div>
+        )}
+
         {/* Appointment list */}
-        {sorted.length === 0 ? (
+        {!loading && sorted.length === 0 ? (
           <Card>
             <EmptyState
               icon={<Calendar size={24} />}
@@ -187,7 +254,7 @@ export default function AppointmentsPage() {
               action={<Button variant="primary" size="md" onClick={() => setShowModal(true)}><Plus size={15} /> Add Appointment</Button>}
             />
           </Card>
-        ) : (
+        ) : !loading && (
           <div className="space-y-3">
             {sorted.map((appt) => {
               const isExpanded = expandedId === appt.id;
@@ -231,7 +298,7 @@ export default function AppointmentsPage() {
                     </div>
                   </button>
 
-                  {/* Mobile date/time — shown below main row on small screens */}
+                  {/* Mobile date/time */}
                   <div className="sm:hidden px-4 pb-2 flex items-center gap-3 -mt-1">
                     <span className="text-[11.5px] font-semibold flex items-center gap-1" style={{ color: 'var(--text-dark)' }}>
                       <Calendar size={11} style={{ color: 'var(--accent)' }} /> {formatDate(appt.date)}
@@ -335,8 +402,9 @@ export default function AppointmentsPage() {
           </div>
           <FormField label="Assigned Agent">
             <FormSelect value={formAgent} onChange={(e) => setFormAgent(e.target.value)}>
-              {AGENT_OPTIONS.map((a) => (
-                <option key={a} value={a}>{a}</option>
+              <option value="">Select agent</option>
+              {agentOptions.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </FormSelect>
           </FormField>

@@ -1,8 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TopBar } from '@/components/dashboard/sidebar';
-import { Badge, Button, Modal, FormField, FormInput, FormSelect } from '@/components/ui/primitives';
-import { Plus, MoreHorizontal, Phone, Mail, Calendar, Bot, ArrowRight, Clock, TrendingUp, CheckCircle } from 'lucide-react';
+import { Button, Card, Modal, FormField, FormInput, FormSelect } from '@/components/ui/primitives';
+import { Plus, MoreHorizontal, Phone, Mail, Bot, ArrowRight, TrendingUp, CheckCircle } from 'lucide-react';
 
 type PipelineLead = {
   id: string;
@@ -14,6 +14,7 @@ type PipelineLead = {
   agent: string;
   nextAction: string;
   score: number;
+  entry_id?: string;
 };
 
 type Stage = {
@@ -23,35 +24,10 @@ type Stage = {
   leads: PipelineLead[];
 };
 
-const INITIAL_STAGES: Stage[] = [
-  { id:'new', name:'New Lead', color:'#6366f1', leads:[
-    {id:'l1',name:'Emily Davis',val:350,svc:'HydraFacial',days:0,ch:'email' as const,agent:'Med Spa Concierge',nextAction:'Send welcome message',score:35},
-    {id:'l2',name:'David Chen',val:500,svc:'Botox Consult',days:1,ch:'sms' as const,agent:'Med Spa Concierge',nextAction:'Qualify budget & timeline',score:42},
-  ]},
-  { id:'contacted', name:'Contacted', color:'#8b5cf6', leads:[
-    {id:'l3',name:'Sarah Mitchell',val:4800,svc:'AC Repair',days:0,ch:'sms' as const,agent:'HVAC Sales Pro',nextAction:'Schedule service call',score:72},
-    {id:'l4',name:'James Wilson',val:12000,svc:'Roof Inspection',days:1,ch:'sms' as const,agent:'Roofing Lead Closer',nextAction:'Send insurance info request',score:60},
-  ]},
-  { id:'qualified', name:'Qualified', color:'#a855f7', leads:[
-    {id:'l5',name:'Marcus Johnson',val:15000,svc:'Full Replacement',days:2,ch:'email' as const,agent:'Roofing Lead Closer',nextAction:'Send proposal',score:88},
-  ]},
-  { id:'proposal', name:'Proposal Sent', color:'#d946ef', leads:[
-    {id:'l6',name:'Lisa Rodriguez',val:6500,svc:'AC Installation',days:3,ch:'sms' as const,agent:'HVAC Sales Pro',nextAction:'Follow up on proposal',score:75},
-  ]},
-  { id:'negotiation', name:'Negotiation', color:'#ec4899', leads:[
-    {id:'l7',name:'Robert Brown',val:8200,svc:'Furnace + AC',days:2,ch:'sms' as const,agent:'HVAC Sales Pro',nextAction:'Finalize pricing',score:82},
-  ]},
-  { id:'won', name:'Won', color:'#22c55e', leads:[
-    {id:'l8',name:'Jennifer Taylor',val:3400,svc:'AC Repair',days:0,ch:'email' as const,agent:'HVAC Sales Pro',nextAction:'Schedule installation',score:95},
-  ]},
-];
-
-const MOCK_AGENTS = ['Med Spa Concierge', 'HVAC Sales Pro', 'Roofing Lead Closer', 'General Assistant'];
-
-let nextId = 9;
-
 export default function PipelinePage() {
-  const [stages, setStages] = useState<Stage[]>(INITIAL_STAGES);
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [agentOptions, setAgentOptions] = useState<{id: string; name: string}[]>([]);
   const [modal, setModal] = useState<'add' | 'card' | null>(null);
   const [selectedLead, setSelectedLead] = useState<PipelineLead | null>(null);
   const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
@@ -68,8 +44,46 @@ export default function PipelinePage() {
   const [addSvc, setAddSvc] = useState('');
   const [addVal, setAddVal] = useState('');
   const [addCh, setAddCh] = useState<'sms' | 'email'>('sms');
-  const [addAgent, setAddAgent] = useState(MOCK_AGENTS[0]);
-  const [addStage, setAddStage] = useState('new');
+  const [addAgent, setAddAgent] = useState('');
+  const [addStage, setAddStage] = useState('');
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/pipeline/stages').then(r => r.json()),
+      fetch('/api/agents').then(r => r.json()),
+    ]).then(([pipelineData, agentsData]) => {
+      const agentMap = new Map<string, string>();
+      const opts: {id: string; name: string}[] = [];
+      (agentsData.agents || []).forEach((a: Record<string, unknown>) => {
+        agentMap.set(a.id as string, a.name as string);
+        opts.push({ id: a.id as string, name: a.name as string });
+      });
+      setAgentOptions(opts);
+
+      if (pipelineData.stages && pipelineData.stages.length > 0) {
+        const mapped = pipelineData.stages.map((s: Record<string, unknown>) => ({
+          id: s.id as string,
+          name: (s.name as string) || 'Stage',
+          color: (s.color as string) || '#6366f1',
+          leads: ((s.entries as Record<string, unknown>[]) || []).map((e: Record<string, unknown>) => ({
+            id: (e.lead_id as string) || (e.id as string),
+            name: (e.lead_name as string) || 'Unknown',
+            val: Number(e.estimated_value) || 0,
+            svc: (e.lead_service as string) || '',
+            days: e.entered_at ? Math.floor((Date.now() - new Date(e.entered_at as string).getTime()) / 86400000) : 0,
+            ch: ((e.lead_source as string) || '').includes('sms') ? 'sms' as const : 'email' as const,
+            agent: e.lead_agent_id ? (agentMap.get(e.lead_agent_id as string) || 'Unassigned') : 'Unassigned',
+            nextAction: (e.notes as string) || 'Follow up',
+            score: Number(e.lead_score) || 0,
+            entry_id: e.id as string,
+          })),
+        }));
+        setStages(mapped);
+        setAddStage(mapped[0]?.id || '');
+      }
+    }).catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const total = stages.reduce((s,st)=>s+st.leads.reduce((a,l)=>a+l.val,0),0);
   const count = stages.reduce((s,st)=>s+st.leads.length,0);
@@ -94,7 +108,7 @@ export default function PipelinePage() {
     setAddSvc('');
     setAddVal('');
     setAddCh('sms');
-    setAddAgent(MOCK_AGENTS[0]);
+    setAddAgent(agentOptions[0]?.id || '');
     setAddStage(stageId);
     setModal('add');
   }
@@ -116,7 +130,6 @@ export default function PipelinePage() {
           ? st.leads.filter(l => l.id !== selectedLead.id)
           : st.leads,
       }));
-      // Add to target stage
       return next.map(st =>
         st.id === editStage
           ? { ...st, leads: [...st.leads, updatedLead] }
@@ -131,11 +144,10 @@ export default function PipelinePage() {
       showToast(`Updated ${selectedLead.name}`);
     }
 
-    // Fire-and-forget persistence
     fetch('/api/pipeline/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leadId: selectedLead.id, stage: editStage, val: newVal, agent: editAgent, nextAction: editNextAction }),
+      body: JSON.stringify({ entry_id: selectedLead.entry_id, stage_id: editStage, estimated_value: newVal, notes: editNextAction }),
     }).catch(() => {});
 
     setModal(null);
@@ -143,16 +155,18 @@ export default function PipelinePage() {
     setSelectedStageId(null);
   }
 
-  function handleAddDeal() {
+  async function handleAddDeal() {
     if (!addName.trim() || !addSvc.trim()) return;
+    const tempId = `temp_${Date.now()}`;
+    const agentName = agentOptions.find(a => a.id === addAgent)?.name || 'Unassigned';
     const newLead: PipelineLead = {
-      id: `l${nextId++}`,
+      id: tempId,
       name: addName.trim(),
       svc: addSvc.trim(),
       val: parseInt(addVal, 10) || 0,
       days: 0,
       ch: addCh,
-      agent: addAgent,
+      agent: agentName,
       nextAction: 'Initial outreach',
       score: 20,
     };
@@ -163,115 +177,182 @@ export default function PipelinePage() {
 
     const targetStageName = stages.find(s => s.id === addStage)?.name || addStage;
     showToast(`Added ${newLead.name} to ${targetStageName}`);
+    setModal(null);
 
-    fetch('/api/pipeline/update', {
+    // Create lead, which auto-creates pipeline entry in first stage
+    const nameParts = addName.trim().split(' ');
+    const leadRes = await fetch('/api/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'create', ...newLead, stage: addStage }),
-    }).catch(() => {});
+      body: JSON.stringify({
+        first_name: nameParts[0],
+        last_name: nameParts.slice(1).join(' ') || null,
+        source: 'manual',
+        status: 'new',
+        agent_id: addAgent || null,
+      }),
+    }).catch(() => null);
 
-    setModal(null);
+    if (leadRes) {
+      const leadData = await leadRes.json();
+      if (leadData.lead) {
+        const realLeadId = leadData.lead.id as string;
+        setStages(prev => prev.map(st => ({
+          ...st,
+          leads: st.leads.map(l => l.id === tempId ? { ...l, id: realLeadId } : l),
+        })));
+
+        // If target stage is not the default first stage, move it
+        if (addStage !== stages[0]?.id) {
+          fetch('/api/pipeline/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              lead_id: realLeadId,
+              stage_id: addStage,
+              estimated_value: parseInt(addVal, 10) || 0,
+              notes: 'Initial outreach',
+            }),
+          }).catch(() => {});
+        }
+      }
+    }
   }
 
   return (
     <>
       <TopBar title="Pipeline" subtitle={`${count} deals · $${total.toLocaleString()} total value`} />
       <div className="flex-1 p-3 md:p-6 overflow-x-auto">
-        {/* Pipeline summary bar */}
-        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
-          {stages.map(st => {
-            const sv = st.leads.reduce((a,l)=>a+l.val,0);
-            const pct = total > 0 ? (sv / total) * 100 : 0;
-            return (
-              <div key={st.id} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg shrink-0" style={{ background: `${st.color}10` }}>
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: st.color }} />
-                <span className="text-[10px] md:text-[11px] font-semibold whitespace-nowrap" style={{ color: st.color }}>
-                  {st.leads.length} · ${sv.toLocaleString()}
-                </span>
-                <span className="text-[9px] md:text-[10px] font-medium tabular-nums" style={{ color: 'var(--text-dark-secondary)' }}>
-                  ({Math.round(pct)}%)
-                </span>
+        {/* Loading */}
+        {loading && (
+          <div className="flex gap-4 min-w-max">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="w-[280px] shrink-0 rounded-xl animate-pulse" style={{ background: '#f8f9fb', border: '1px solid #e8eaef' }}>
+                <div className="h-1.5 rounded-t-xl" style={{ background: '#e2e5eb' }} />
+                <div className="p-4 space-y-3">
+                  <div className="h-4 rounded" style={{ background: '#e8eaef' }} />
+                  <div className="h-20 rounded" style={{ background: '#f0f2f5' }} />
+                </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {/* Kanban board */}
-        <div className="flex gap-3 md:gap-4 min-w-max pb-4 snap-x snap-mandatory md:snap-none">
-          {stages.map(st => {
-            const sv = st.leads.reduce((a,l)=>a+l.val,0);
-            return (
-              <div key={st.id} className="w-[260px] md:w-[280px] shrink-0 flex flex-col rounded-xl snap-start overflow-hidden" style={{ background:'#f8f9fb', border:'1px solid #e8eaef', maxHeight:'calc(100vh - 180px)' }}>
-                <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${st.color}, ${st.color}66)` }} />
-                <div className="p-3 md:p-3.5 shrink-0">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background:st.color }}/>
-                      <span className="text-[12px] md:text-[13px] font-bold" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>{st.name}</span>
-                      <span className="text-[10px] md:text-[11px] font-semibold px-1.5 py-0.5 rounded-md badge-inline" style={{ background:'#e8eaef', color:'var(--text-dark-secondary)' }}>{st.leads.length}</span>
-                    </div>
-                    <button className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-200 btn-icon-sm transition-colors" onClick={() => openAddModal(st.id)}>
-                      <Plus size={14} style={{ color:'var(--text-dark-secondary)' }}/>
-                    </button>
+        {/* Empty state */}
+        {!loading && stages.length === 0 && (
+          <Card className="animate-fade-in">
+            <div className="text-center py-12">
+              <TrendingUp size={40} style={{ color: '#e2e5eb' }} className="mx-auto mb-3" />
+              <p className="text-[15px] font-semibold mb-1" style={{ color: 'var(--text-dark)' }}>No pipeline stages</p>
+              <p className="text-[13px]" style={{ color: 'var(--text-dark-secondary)' }}>Pipeline stages will be created when you set up your organization.</p>
+            </div>
+          </Card>
+        )}
+
+        {/* Pipeline summary bar */}
+        {!loading && stages.length > 0 && (
+          <>
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+              {stages.map(st => {
+                const sv = st.leads.reduce((a,l)=>a+l.val,0);
+                const pct = total > 0 ? (sv / total) * 100 : 0;
+                return (
+                  <div key={st.id} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg shrink-0" style={{ background: `${st.color}10` }}>
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: st.color }} />
+                    <span className="text-[10px] md:text-[11px] font-semibold whitespace-nowrap" style={{ color: st.color }}>
+                      {st.leads.length} · ${sv.toLocaleString()}
+                    </span>
+                    <span className="text-[9px] md:text-[10px] font-medium tabular-nums" style={{ color: 'var(--text-dark-secondary)' }}>
+                      ({Math.round(pct)}%)
+                    </span>
                   </div>
-                  <div className="text-[12px] md:text-[13px] font-bold tabular-nums" style={{ color: st.color }}>${sv.toLocaleString()}</div>
-                </div>
-                <div className="flex-1 overflow-y-auto px-2 md:px-2.5 pb-2.5">
-                  {st.leads.map(l => {
-                    const urgencyColor = l.days >= 5 ? 'var(--danger)' : l.days >= 3 ? 'var(--warning)' : 'var(--text-dark-secondary)';
-                    const scoreColor = l.score >= 75 ? 'var(--success)' : l.score >= 50 ? 'var(--accent)' : 'var(--warning)';
-                    return (
-                    <div
-                      key={l.id}
-                      className="rounded-lg mb-2 md:mb-2.5 cursor-pointer active:scale-[0.98] transition-transform group overflow-hidden"
-                      style={{ background:'#fff', border:'1px solid #e8eaef', boxShadow:'var(--shadow-sm)' }}
-                      onClick={() => openEditModal(l, st.id)}
-                    >
-                      <div className="h-[2px]" style={{ background: st.color, opacity: Math.min(l.val / 15000, 1) * 0.6 + 0.4 }} />
-                      <div className="p-3 md:p-3.5">
-                        <div className="flex items-start justify-between mb-1.5 md:mb-2">
-                          <span className="text-[12px] md:text-[13px] font-semibold" style={{ color:'var(--text-dark)' }}>{l.name}</span>
-                          <button className="opacity-0 group-hover:opacity-100 transition-opacity btn-icon-sm" onClick={(e) => { e.stopPropagation(); openEditModal(l, st.id); }}>
-                            <MoreHorizontal size={14} style={{ color:'var(--text-dark-secondary)' }}/>
-                          </button>
+                );
+              })}
+            </div>
+
+            {/* Kanban board */}
+            <div className="flex gap-3 md:gap-4 min-w-max pb-4 snap-x snap-mandatory md:snap-none">
+              {stages.map(st => {
+                const sv = st.leads.reduce((a,l)=>a+l.val,0);
+                return (
+                  <div key={st.id} className="w-[260px] md:w-[280px] shrink-0 flex flex-col rounded-xl snap-start overflow-hidden" style={{ background:'#f8f9fb', border:'1px solid #e8eaef', maxHeight:'calc(100vh - 180px)' }}>
+                    <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${st.color}, ${st.color}66)` }} />
+                    <div className="p-3 md:p-3.5 shrink-0">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background:st.color }}/>
+                          <span className="text-[12px] md:text-[13px] font-bold" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>{st.name}</span>
+                          <span className="text-[10px] md:text-[11px] font-semibold px-1.5 py-0.5 rounded-md badge-inline" style={{ background:'#e8eaef', color:'var(--text-dark-secondary)' }}>{st.leads.length}</span>
                         </div>
-                        <div className="text-[11px] md:text-[12px] mb-2" style={{ color:'var(--text-dark-secondary)' }}>{l.svc}</div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[14px] md:text-[15px] font-bold tabular-nums" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>${l.val.toLocaleString()}</span>
-                          <span className="text-[10px] md:text-[11px] font-semibold px-1.5 py-0.5 rounded-md" style={{ color: urgencyColor, background: l.days >= 3 ? `${urgencyColor}14` : 'transparent' }}>{l.days}d in stage</span>
-                        </div>
-                        {/* Score bar */}
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: '#e8eaef' }}>
-                            <div className="h-full rounded-full transition-all" style={{ width: `${l.score}%`, background: scoreColor }} />
-                          </div>
-                          <span className="text-[10px] font-bold tabular-nums" style={{ color: scoreColor }}>{l.score}</span>
-                        </div>
-                        {/* Next action */}
-                        <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] px-2 py-1.5 rounded-md" style={{ background:'#f5f6f8', color:'var(--text-dark-secondary)' }}>
-                          <ArrowRight size={9} className="shrink-0" />
-                          <span className="truncate">{l.nextAction}</span>
-                        </div>
-                        {/* Agent + channel */}
-                        <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: '1px solid #f0f2f5' }}>
-                          <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-dark-secondary)' }}>
-                            <Bot size={10} style={{ color: 'var(--accent)' }} />
-                            <span className="truncate max-w-[100px]">{l.agent}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-dark-secondary)' }}>
-                            {l.ch==='sms'?<Phone size={9}/>:<Mail size={9}/>}
-                            <span className="uppercase">{l.ch}</span>
-                          </div>
-                        </div>
+                        <button className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-200 btn-icon-sm transition-colors" onClick={() => openAddModal(st.id)}>
+                          <Plus size={14} style={{ color:'var(--text-dark-secondary)' }}/>
+                        </button>
                       </div>
+                      <div className="text-[12px] md:text-[13px] font-bold tabular-nums" style={{ color: st.color }}>${sv.toLocaleString()}</div>
                     </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                    <div className="flex-1 overflow-y-auto px-2 md:px-2.5 pb-2.5">
+                      {st.leads.length === 0 && (
+                        <div className="text-center py-6">
+                          <p className="text-[11px]" style={{ color: 'var(--text-dark-secondary)' }}>No deals in this stage</p>
+                        </div>
+                      )}
+                      {st.leads.map(l => {
+                        const urgencyColor = l.days >= 5 ? 'var(--danger)' : l.days >= 3 ? 'var(--warning)' : 'var(--text-dark-secondary)';
+                        const scoreColor = l.score >= 75 ? 'var(--success)' : l.score >= 50 ? 'var(--accent)' : 'var(--warning)';
+                        return (
+                        <div
+                          key={l.id}
+                          className="rounded-lg mb-2 md:mb-2.5 cursor-pointer active:scale-[0.98] transition-transform group overflow-hidden"
+                          style={{ background:'#fff', border:'1px solid #e8eaef', boxShadow:'var(--shadow-sm)' }}
+                          onClick={() => openEditModal(l, st.id)}
+                        >
+                          <div className="h-[2px]" style={{ background: st.color, opacity: Math.min(l.val / 15000, 1) * 0.6 + 0.4 }} />
+                          <div className="p-3 md:p-3.5">
+                            <div className="flex items-start justify-between mb-1.5 md:mb-2">
+                              <span className="text-[12px] md:text-[13px] font-semibold" style={{ color:'var(--text-dark)' }}>{l.name}</span>
+                              <button className="opacity-0 group-hover:opacity-100 transition-opacity btn-icon-sm" onClick={(e) => { e.stopPropagation(); openEditModal(l, st.id); }}>
+                                <MoreHorizontal size={14} style={{ color:'var(--text-dark-secondary)' }}/>
+                              </button>
+                            </div>
+                            <div className="text-[11px] md:text-[12px] mb-2" style={{ color:'var(--text-dark-secondary)' }}>{l.svc || 'Service TBD'}</div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[14px] md:text-[15px] font-bold tabular-nums" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>${l.val.toLocaleString()}</span>
+                              <span className="text-[10px] md:text-[11px] font-semibold px-1.5 py-0.5 rounded-md" style={{ color: urgencyColor, background: l.days >= 3 ? `${urgencyColor}14` : 'transparent' }}>{l.days}d in stage</span>
+                            </div>
+                            {/* Score bar */}
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: '#e8eaef' }}>
+                                <div className="h-full rounded-full transition-all" style={{ width: `${l.score}%`, background: scoreColor }} />
+                              </div>
+                              <span className="text-[10px] font-bold tabular-nums" style={{ color: scoreColor }}>{l.score}</span>
+                            </div>
+                            {/* Next action */}
+                            <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] px-2 py-1.5 rounded-md" style={{ background:'#f5f6f8', color:'var(--text-dark-secondary)' }}>
+                              <ArrowRight size={9} className="shrink-0" />
+                              <span className="truncate">{l.nextAction}</span>
+                            </div>
+                            {/* Agent + channel */}
+                            <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: '1px solid #f0f2f5' }}>
+                              <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-dark-secondary)' }}>
+                                <Bot size={10} style={{ color: 'var(--accent)' }} />
+                                <span className="truncate max-w-[100px]">{l.agent}</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-dark-secondary)' }}>
+                                {l.ch==='sms'?<Phone size={9}/>:<Mail size={9}/>}
+                                <span className="uppercase">{l.ch}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Add to Pipeline modal */}
@@ -294,7 +375,8 @@ export default function PipelinePage() {
           </FormField>
           <FormField label="Agent">
             <FormSelect value={addAgent} onChange={e => setAddAgent(e.target.value)}>
-              {MOCK_AGENTS.map(a => <option key={a} value={a}>{a}</option>)}
+              <option value="">Unassigned</option>
+              {agentOptions.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             </FormSelect>
           </FormField>
           <FormField label="Stage">
@@ -313,7 +395,6 @@ export default function PipelinePage() {
       <Modal open={modal === 'card' && !!selectedLead} onClose={() => { setModal(null); setSelectedLead(null); setSelectedStageId(null); }} title={selectedLead?.name || 'Deal Details'}>
         {selectedLead && (
           <div className="space-y-4">
-            {/* Deal value + lead score summary */}
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg p-3" style={{ background: '#f8f9fb' }}>
                 <div className="text-[11px] mb-1" style={{ color: 'var(--text-dark-secondary)' }}>Deal Value</div>
@@ -325,10 +406,9 @@ export default function PipelinePage() {
               </div>
             </div>
 
-            {/* Static info */}
             <div className="space-y-2.5">
               {[
-                { l: 'Service', v: selectedLead.svc },
+                { l: 'Service', v: selectedLead.svc || 'TBD' },
                 { l: 'Channel', v: selectedLead.ch.toUpperCase() },
                 { l: 'Days in Stage', v: `${selectedLead.days} days` },
               ].map(({ l, v }) => (
@@ -339,7 +419,6 @@ export default function PipelinePage() {
               ))}
             </div>
 
-            {/* Editable fields */}
             <div className="space-y-3 pt-1">
               <FormField label="Stage">
                 <FormSelect value={editStage} onChange={e => setEditStage(e.target.value)}>
@@ -351,7 +430,8 @@ export default function PipelinePage() {
               </FormField>
               <FormField label="Assigned Agent">
                 <FormSelect value={editAgent} onChange={e => setEditAgent(e.target.value)}>
-                  {MOCK_AGENTS.map(a => <option key={a} value={a}>{a}</option>)}
+                  <option value="">Unassigned</option>
+                  {agentOptions.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </FormSelect>
               </FormField>
               <FormField label="Next Action">

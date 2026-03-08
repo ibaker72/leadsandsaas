@@ -5,33 +5,43 @@ import { TopBar } from '@/components/dashboard/sidebar';
 import { Badge, Button, LEAD_STATUS_VARIANT, Avatar, Modal, FormField, FormInput, FormSelect, FormTextarea } from '@/components/ui/primitives';
 import { Search, Bot, User, Send, Phone, Mail, Pause, Play, ChevronLeft, Calendar, Info, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
 
-const CONVOS = [
-  { id: '1', name: 'Sarah Mitchell', phone: '+1 (555) 234-5678', ch: 'sms' as const, agent: 'HVAC Sales Pro', msg: 'Yes, I need my AC looked at ASAP.', time: '2m', unread: true, status: 'contacted', score: 72, ai: true },
-  { id: '2', name: 'Marcus Johnson', phone: '+1 (555) 345-6789', ch: 'email' as const, agent: 'Roofing Lead Closer', msg: 'Tuesday at 10am works for me.', time: '8m', unread: false, status: 'qualified', score: 88, ai: true },
-  { id: '3', name: 'David Chen', phone: '+1 (555) 456-7890', ch: 'sms' as const, agent: 'Med Spa Concierge', msg: 'How much does a hydrafacial cost?', time: '15m', unread: true, status: 'new', score: 45, ai: true },
-  { id: '4', name: 'Lisa Rodriguez', phone: '+1 (555) 567-8901', ch: 'sms' as const, agent: 'HVAC Sales Pro', msg: 'What makes you different?', time: '22m', unread: false, status: 'nurturing', score: 55, ai: false },
-];
+type Convo = {
+  id: string;
+  name: string;
+  phone: string;
+  ch: 'sms' | 'email' | 'web_chat';
+  agent: string;
+  msg: string;
+  time: string;
+  unread: boolean;
+  status: string;
+  score: number;
+  ai: boolean;
+  lead_id: string;
+};
 
 type Msg = { id: string; dir: 'in' | 'out'; type: string; body: string; time: string; actions?: string[]; queued?: boolean; status?: 'sending' | 'sent' | 'failed' };
 
-const INITIAL_MSGS: Msg[] = [
-  { id: '1', dir: 'in', type: 'lead', body: "Hi, my AC isn't cooling at all and it's 95 degrees. Can someone come look at it?", time: '10:42 AM' },
-  { id: '2', dir: 'out', type: 'ai', body: "Hi Sarah! So sorry about your AC issues in this heat. We can help. What type of system do you have — central air, mini-split, or window unit?", time: '10:42 AM', actions: ['score_lead: 65'] },
-  { id: '3', dir: 'in', type: 'lead', body: "It's central air. House is about 12 years old.", time: '10:44 AM' },
-  { id: '4', dir: 'out', type: 'ai', body: "Got it — 12-year-old central AC. Could be refrigerant, capacitor, or compressor. We carry most parts and usually fix same-day. We have slots at 2 PM today or 9 AM tomorrow — which works?", time: '10:44 AM', actions: ['update_pipeline → Qualified', 'score_lead: 72'] },
-  { id: '5', dir: 'in', type: 'lead', body: '2pm today works!! What does the service call cost?', time: '10:45 AM' },
-];
+function timeAgo(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+  return `${Math.floor(seconds / 86400)}d`;
+}
 
 function nowTime() {
   return new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
 export default function ConversationsPage() {
+  const [convos, setConvos] = useState<Convo[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selId, setSelId] = useState<string | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [search, setSearch] = useState('');
   const [humanMsg, setHumanMsg] = useState('');
-  const [messages, setMessages] = useState<Msg[]>(INITIAL_MSGS);
+  const [messages, setMessages] = useState<Msg[]>([]);
   const [aiPaused, setAiPaused] = useState<Record<string, boolean>>({});
   const [operatorMode, setOperatorMode] = useState(false);
   const [bookModal, setBookModal] = useState(false);
@@ -45,16 +55,61 @@ export default function ConversationsPage() {
   const [bookDuration, setBookDuration] = useState('30');
   const [bookNotes, setBookNotes] = useState('');
 
-  const sel = CONVOS.find((c) => c.id === selId);
+  const sel = convos.find((c) => c.id === selId);
   const isPaused = selId ? aiPaused[selId] ?? false : false;
+
+  // Fetch conversations
+  useEffect(() => {
+    fetch('/api/conversations')
+      .then(r => r.json())
+      .then(data => {
+        if (data.conversations && data.conversations.length > 0) {
+          const mapped = data.conversations.map((c: Record<string, unknown>) => ({
+            id: c.id as string,
+            name: (c.lead_name as string) || 'Unknown',
+            phone: (c.lead_phone as string) || '',
+            ch: ((c.channel as string) || 'sms') as 'sms' | 'email' | 'web_chat',
+            agent: (c.agent_name as string) || 'Unassigned',
+            msg: (c.last_message as string) || 'No messages yet',
+            time: c.last_message_at ? timeAgo(new Date(c.last_message_at as string)) : '',
+            unread: false,
+            status: (c.lead_status as string) || 'new',
+            score: Number(c.lead_score) || 0,
+            ai: !(c.is_human_takeover as boolean),
+            lead_id: (c.lead_id as string) || '',
+          }));
+          setConvos(mapped);
+          // Auto-select first on desktop
+          if (window.innerWidth >= 768) setSelId(mapped[0].id);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Load messages when conversation selected
+  useEffect(() => {
+    if (!selId) return;
+    fetch(`/api/conversations/${selId}/messages`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.messages) {
+          setMessages(data.messages.map((m: Record<string, unknown>) => ({
+            id: (m.id as string),
+            dir: (m.direction === 'inbound' ? 'in' : 'out') as 'in' | 'out',
+            type: (m.sender_type as string) || 'system',
+            body: (m.body as string) || '',
+            time: new Date(m.created_at as string).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+            status: (m.status as string) === 'sent' ? 'sent' as const : undefined,
+          })));
+        }
+      })
+      .catch(() => {});
+  }, [selId]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [selId, messages.length]);
-
-  useEffect(() => {
-    if (window.innerWidth >= 768 && !selId) setSelId(CONVOS[0].id);
-  }, []);
 
   async function retrySend(msg: Msg) {
     setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, status: 'sending' } : m));
@@ -158,7 +213,7 @@ export default function ConversationsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: bookService || 'Appointment',
-        lead_id: selId,
+        lead_id: sel?.lead_id || null,
         service_type: bookService,
         starts_at: new Date(bookDate + 'T' + bookTime).toISOString(),
         ends_at: new Date(new Date(bookDate + 'T' + bookTime).getTime() + parseInt(bookDuration) * 60000).toISOString(),
@@ -174,9 +229,13 @@ export default function ConversationsPage() {
     setBookService(''); setBookDate(''); setBookTime(''); setBookDuration('30'); setBookNotes('');
   }
 
+  const filteredConvos = convos.filter(c =>
+    !search || c.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <>
-      <TopBar title="Conversations" subtitle={`${CONVOS.length} active`} />
+      <TopBar title="Conversations" subtitle={`${convos.length} active`} />
 
       {bookSuccess && (
         <div className="fixed top-4 right-4 z-[100] px-4 py-2.5 rounded-lg text-[13px] font-medium animate-fade-in" style={{ background: 'var(--success)', color: '#fff' }}>
@@ -199,7 +258,23 @@ export default function ConversationsPage() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {CONVOS.map((c) => (
+            {loading && (
+              <div className="p-8 text-center">
+                <div className="animate-pulse space-y-3">
+                  {[1,2,3].map(i => <div key={i} className="h-16 rounded-lg" style={{ background: '#f0f2f5' }} />)}
+                </div>
+              </div>
+            )}
+            {!loading && convos.length === 0 && (
+              <div className="flex-1 flex items-center justify-center p-8">
+                <div className="text-center">
+                  <MessageSquare size={32} style={{ color: '#e2e5eb' }} className="mx-auto mb-2" />
+                  <p className="text-[13px] font-medium" style={{ color: 'var(--text-dark-secondary)' }}>No conversations yet</p>
+                  <p className="text-[12px] mt-1" style={{ color: 'var(--text-dark-secondary)' }}>Conversations appear when leads start messaging.</p>
+                </div>
+              </div>
+            )}
+            {filteredConvos.map((c) => (
               <button key={c.id} onClick={() => setSelId(c.id)}
                 className="w-full text-left px-4 py-3.5 transition-all relative row-hover-accent"
                 style={{ background: c.id === selId ? '#f0f2f5' : 'transparent', borderBottom: '1px solid #f0f2f5' }}>
@@ -269,9 +344,19 @@ export default function ConversationsPage() {
             )}
 
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-1">
-              <div className="flex justify-center mb-4">
-                <span className="text-[11px] font-medium px-3 py-1 rounded-full badge-inline" style={{ background: '#f0f2f5', color: 'var(--text-dark-secondary)' }}>Today</span>
-              </div>
+              {messages.length === 0 && (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <MessageSquare size={32} style={{ color: '#e2e5eb' }} className="mx-auto mb-2" />
+                    <p className="text-[13px]" style={{ color: 'var(--text-dark-secondary)' }}>No messages yet. Start the conversation.</p>
+                  </div>
+                </div>
+              )}
+              {messages.length > 0 && (
+                <div className="flex justify-center mb-4">
+                  <span className="text-[11px] font-medium px-3 py-1 rounded-full badge-inline" style={{ background: '#f0f2f5', color: 'var(--text-dark-secondary)' }}>Today</span>
+                </div>
+              )}
               {messages.map((m) => {
                 if (m.type === 'system') {
                   return (
@@ -284,7 +369,7 @@ export default function ConversationsPage() {
                   <div key={m.id} className={`flex ${m.dir === 'in' ? 'justify-start' : 'justify-end'} mb-1 animate-fade-in`}>
                     <div className={`max-w-[85%] md:max-w-[70%] ${m.dir === 'out' ? 'flex flex-col items-end' : ''}`}>
                       <div className="px-3.5 py-2.5 rounded-2xl" style={{
-                        background: m.dir === 'in' ? '#f0f2f5' : m.type === 'human' ? 'var(--info)' : 'var(--bg-primary)',
+                        background: m.dir === 'in' ? '#f0f2f5' : m.type === 'human' || m.type === 'human_agent' ? 'var(--info)' : 'var(--bg-primary)',
                         color: m.dir === 'in' ? 'var(--text-dark)' : '#fff',
                         borderBottomLeftRadius: m.dir === 'in' ? '6px' : undefined,
                         borderBottomRightRadius: m.dir === 'out' ? '6px' : undefined,
@@ -293,8 +378,8 @@ export default function ConversationsPage() {
                       </div>
                       <div className="flex items-center gap-2 mt-1 px-1">
                         <span className="text-[10px] md:text-[10.5px]" style={{ color: 'var(--text-dark-secondary)' }}>{m.time}</span>
-                        {m.dir === 'out' && m.type === 'ai' && <span className="flex items-center gap-0.5 text-[10px] badge-inline" style={{ color: 'var(--accent)' }}><Bot size={10} /> AI</span>}
-                        {m.dir === 'out' && m.type === 'human' && <span className="flex items-center gap-0.5 text-[10px] badge-inline" style={{ color: 'var(--info)' }}><User size={10} /> You</span>}
+                        {m.dir === 'out' && (m.type === 'ai' || m.type === 'ai_agent') && <span className="flex items-center gap-0.5 text-[10px] badge-inline" style={{ color: 'var(--accent)' }}><Bot size={10} /> AI</span>}
+                        {m.dir === 'out' && (m.type === 'human' || m.type === 'human_agent') && <span className="flex items-center gap-0.5 text-[10px] badge-inline" style={{ color: 'var(--info)' }}><User size={10} /> You</span>}
                         {m.status === 'sending' && <span className="text-[9px] italic" style={{ color: 'var(--text-dark-secondary)' }}>Sending...</span>}
                         {m.status === 'sent' && <span className="text-[9px] font-medium" style={{ color: 'var(--success)' }}>&#10003; Sent</span>}
                         {m.status === 'failed' && <button onClick={() => retrySend(m)} className="text-[9px] font-medium cursor-pointer hover:underline" style={{ color: 'var(--danger)', background: 'none', border: 'none', padding: 0 }}>Failed — tap to retry</button>}
@@ -333,9 +418,19 @@ export default function ConversationsPage() {
           </div>
         )}
 
-        {!sel && (
+        {!sel && !loading && (
           <div className="hidden md:flex flex-1 items-center justify-center bg-white">
-            <div className="text-center"><MessageSquare size={40} style={{ color: '#e2e5eb' }} className="mx-auto mb-3" /><p className="text-[14px] font-medium" style={{ color: 'var(--text-dark-secondary)' }}>Select a conversation</p></div>
+            <div className="text-center">
+              <MessageSquare size={40} style={{ color: '#e2e5eb' }} className="mx-auto mb-3" />
+              <p className="text-[14px] font-medium" style={{ color: 'var(--text-dark-secondary)' }}>
+                {convos.length === 0 ? 'No conversations yet' : 'Select a conversation'}
+              </p>
+              {convos.length === 0 && (
+                <p className="text-[12px] mt-1" style={{ color: 'var(--text-dark-secondary)' }}>
+                  Conversations will appear when leads start messaging.
+                </p>
+              )}
+            </div>
           </div>
         )}
 
@@ -359,12 +454,17 @@ export default function ConversationsPage() {
                   <div className="text-[11px]" style={{ color: 'var(--text-dark-secondary)' }}>Messages</div>
                 </div>
               </div>
-              <h5 className="text-[11px] md:text-[12px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--text-dark-secondary)' }}>Qualification</h5>
+              <h5 className="text-[11px] md:text-[12px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--text-dark-secondary)' }}>Lead Info</h5>
               <div className="space-y-2.5 mb-6">
-                {[{ l: 'Service', v: 'AC Repair' }, { l: 'Timeline', v: 'ASAP' }, { l: 'Property', v: 'Residential' }, { l: 'Budget', v: 'Not discussed' }].map(({ l, v }) => (
+                {[
+                  { l: 'Status', v: sel.status },
+                  { l: 'Channel', v: sel.ch.toUpperCase() },
+                  { l: 'Agent', v: sel.agent },
+                  { l: 'Phone', v: sel.phone || 'N/A' },
+                ].map(({ l, v }) => (
                   <div key={l} className="flex justify-between">
                     <span className="text-[12px]" style={{ color: 'var(--text-dark-secondary)' }}>{l}</span>
-                    <span className="text-[12px] font-medium" style={{ color: v.includes('Not') ? 'var(--text-dark-secondary)' : 'var(--text-dark)' }}>{v}</span>
+                    <span className="text-[12px] font-medium" style={{ color: v === 'N/A' ? 'var(--text-dark-secondary)' : 'var(--text-dark)' }}>{v}</span>
                   </div>
                 ))}
               </div>

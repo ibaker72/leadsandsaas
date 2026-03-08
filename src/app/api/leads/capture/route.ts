@@ -76,6 +76,41 @@ export async function POST(req: NextRequest) {
     if (!hasStringId(lead)) throw new Error('Lead insert did not return an id');
 
     await new DomainEventEmitter(db).emit('lead.created', 'lead', lead.id, { source: 'web_form', agent_id: agentId }, orgId);
+
+    // Auto-create pipeline entry in first stage
+    const { data: firstStage } = await db
+      .from('pipeline_stages')
+      .select('id')
+      .eq('org_id', orgId)
+      .order('position', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (hasStringId(firstStage)) {
+      await db.from('lead_pipeline_entries').insert({
+        org_id: orgId,
+        lead_id: lead.id,
+        stage_id: firstStage.id,
+      });
+      await db.from('pipeline_transitions').insert({
+        org_id: orgId,
+        lead_id: lead.id,
+        from_stage_id: null,
+        to_stage_id: firstStage.id,
+        triggered_by: 'system:lead_capture',
+      });
+    }
+
+    // Auto-create conversation thread
+    const channel = phoneE164 ? 'sms' : input.email ? 'email' : 'web_chat';
+    await db.from('conversations').insert({
+      org_id: orgId,
+      lead_id: lead.id,
+      agent_id: agentId || null,
+      channel,
+      is_active: true,
+    });
+
     return NextResponse.json({ success: true, lead_id: lead.id }, { status: 201, headers: cors });
   } catch (e) { console.error('Capture error:', e); return NextResponse.json({ error: 'Internal error' }, { status: 500, headers: cors }); }
 }
