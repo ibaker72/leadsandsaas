@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { TopBar } from '@/components/dashboard/sidebar';
-import { Badge, Button, Card, LEAD_STATUS_VARIANT } from '@/components/ui/primitives';
+import { Badge, Button, Card, LEAD_STATUS_VARIANT, Avatar } from '@/components/ui/primitives';
 import { Search, Download, Plus, ChevronLeft, ChevronRight, MoreHorizontal, Mail, Bot } from 'lucide-react';
 
 const LEADS = [
@@ -19,11 +19,11 @@ const LEADS = [
 function ScoreBar({ score }: { score: number }) {
   const color = score >= 75 ? 'var(--success)' : score >= 50 ? 'var(--accent)' : score >= 25 ? 'var(--warning)' : 'var(--danger)';
   return (
-    <div className="flex items-center gap-2">
-      <div className="w-10 md:w-12 h-1.5 rounded-full overflow-hidden" style={{ background: '#e8eaef' }}>
-        <div className="h-full rounded-full transition-all" style={{ width: `${score}%`, background: color }} />
+    <div className="flex items-center gap-2.5">
+      <div className="w-14 md:w-16 h-2 rounded-full overflow-hidden" style={{ background: '#e8eaef' }}>
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${score}%`, background: `linear-gradient(90deg, ${color}88, ${color})` }} />
       </div>
-      <span className="text-[12px] font-semibold tabular-nums" style={{ color }}>{score}</span>
+      <span className="text-[12px] font-bold tabular-nums min-w-[24px]" style={{ color }}>{score}</span>
     </div>
   );
 }
@@ -75,10 +75,15 @@ export default function LeadsPage() {
               </thead>
               <tbody>
                 {filtered.map((l) => (
-                  <tr key={l.id} className="hover:bg-gray-50 cursor-pointer transition-colors" style={{ borderBottom: '1px solid #f0f2f5' }}>
+                  <tr key={l.id} className="hover:bg-gray-50/80 cursor-pointer transition-colors row-hover-accent" style={{ borderBottom: '1px solid #f0f2f5' }}>
                     <td className="py-3 px-3 md:px-4">
-                      <div className="text-[13px] md:text-[13.5px] font-semibold" style={{ color: 'var(--text-dark)' }}>{l.name}</div>
-                      <div className="text-[11px] md:text-[12px] flex items-center gap-1 mt-0.5" style={{ color: 'var(--text-dark-secondary)' }}><Mail size={10} />{l.email}</div>
+                      <div className="flex items-center gap-2.5">
+                        <Avatar name={l.name} size="sm" />
+                        <div>
+                          <div className="text-[13px] md:text-[13.5px] font-semibold" style={{ color: 'var(--text-dark)' }}>{l.name}</div>
+                          <div className="text-[11px] md:text-[12px] flex items-center gap-1 mt-0.5" style={{ color: 'var(--text-dark-secondary)' }}><Mail size={10} />{l.email}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="py-3 px-3 md:px-4"><Badge variant={LEAD_STATUS_VARIANT[l.status] || 'muted'} dot>{l.status}</Badge></td>
                     <td className="py-3 px-3 md:px-4"><ScoreBar score={l.score} /></td>

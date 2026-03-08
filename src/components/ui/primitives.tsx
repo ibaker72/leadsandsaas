@@ -21,7 +21,7 @@ export function StatCard({ label, value, change, icon, accentColor = 'var(--acce
 
   return (
     <div
-      className="rounded-xl p-4 md:p-5 card-hover animate-fade-in opacity-0"
+      className="rounded-xl overflow-hidden card-hover animate-fade-in opacity-0"
       style={{
         background: '#fff',
         border: '1px solid #e8eaef',
@@ -30,34 +30,38 @@ export function StatCard({ label, value, change, icon, accentColor = 'var(--acce
         animationFillMode: 'forwards',
       }}
     >
-      <div className="flex items-start justify-between mb-3 md:mb-4">
-        <div
-          className="w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background: `${accentColor}14`, color: accentColor }}
-        >
-          {icon}
-        </div>
-        {change !== undefined && (
+      {/* Accent top bar */}
+      <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${accentColor}, ${accentColor}66)` }} />
+      <div className="p-4 md:p-5">
+        <div className="flex items-start justify-between mb-3 md:mb-4">
           <div
-            className="flex items-center gap-1 text-[11px] md:text-[12px] font-semibold px-1.5 md:px-2 py-0.5 md:py-1 rounded-md badge-inline"
-            style={{
-              background: pos ? 'var(--success-soft)' : neg ? 'var(--danger-soft)' : 'var(--bg-surface-secondary)',
-              color: pos ? 'var(--success)' : neg ? 'var(--danger)' : 'var(--text-dark-secondary)',
-            }}
+            className="w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: `${accentColor}14`, color: accentColor }}
           >
-            {pos ? <TrendingUp size={11} /> : neg ? <TrendingDown size={11} /> : <Minus size={11} />}
-            {Math.abs(change)}%
+            {icon}
           </div>
-        )}
-      </div>
-      <div
-        className="text-[22px] md:text-[28px] font-bold tracking-tight leading-none mb-1"
-        style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi, sans-serif' }}
-      >
-        {value}
-      </div>
-      <div className="text-[12px] md:text-[13px] font-medium" style={{ color: 'var(--text-dark-secondary)' }}>
-        {label}
+          {change !== undefined && (
+            <div
+              className="flex items-center gap-1 text-[11px] md:text-[12px] font-semibold px-1.5 md:px-2 py-0.5 md:py-1 rounded-md badge-inline"
+              style={{
+                background: pos ? 'var(--success-soft)' : neg ? 'var(--danger-soft)' : 'var(--bg-surface-secondary)',
+                color: pos ? 'var(--success)' : neg ? 'var(--danger)' : 'var(--text-dark-secondary)',
+              }}
+            >
+              {pos ? <TrendingUp size={11} /> : neg ? <TrendingDown size={11} /> : <Minus size={11} />}
+              {Math.abs(change)}%
+            </div>
+          )}
+        </div>
+        <div
+          className="text-[22px] md:text-[28px] font-bold tracking-tight leading-none mb-1 count-up"
+          style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi, sans-serif', animationDelay: `${delay + 200}ms` }}
+        >
+          {value}
+        </div>
+        <div className="text-[12px] md:text-[13px] font-medium" style={{ color: 'var(--text-dark-secondary)' }}>
+          {label}
+        </div>
       </div>
     </div>
   );
@@ -143,22 +147,11 @@ export function Button({
 // ---------------------------------------------------------------------------
 // Card
 // ---------------------------------------------------------------------------
-export function Card({
-  children,
-  className = '',
-  padding = true,
-  style,
-  ...props
-}: {
-  children: ReactNode;
-  className?: string;
-  padding?: boolean;
-} & React.HTMLAttributes<HTMLDivElement>) {
+export function Card({ children, className = '', padding = true }: { children: ReactNode; className?: string; padding?: boolean }) {
   return (
     <div
       className={`rounded-xl ${padding ? 'p-4 md:p-6' : ''} ${className}`}
-      style={{ background: '#fff', border: '1px solid #e8eaef', boxShadow: 'var(--shadow-sm)', ...style }}
-      {...props}
+      style={{ background: '#fff', border: '1px solid #e8eaef', boxShadow: 'var(--shadow-sm)' }}
     >
       {children}
     </div>
@@ -195,5 +188,72 @@ export function SkeletonRow() {
         <div className="skeleton h-3 w-1/2 rounded" />
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Avatar — consistent identity anchors across pages
+// ---------------------------------------------------------------------------
+
+const AVATAR_COLORS = [
+  ['#6366f1', '#818cf8'], ['#8b5cf6', '#a78bfa'], ['#d946ef', '#e879f9'],
+  ['#ec4899', '#f472b6'], ['#f59e0b', '#fbbf24'], ['#10b981', '#34d399'],
+  ['#3b82f6', '#60a5fa'], ['#06b6d4', '#22d3ee'], ['#f97316', '#fb923c'],
+];
+
+function nameToColor(name: string): [string, string] {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
+  const [bg, fg] = nameToColor(name);
+  const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  const sz = { sm: 'w-7 h-7 text-[10px]', md: 'w-9 h-9 text-[12px]', lg: 'w-12 h-12 text-[15px]' };
+
+  return (
+    <div
+      className={`${sz[size]} rounded-full flex items-center justify-center font-bold shrink-0 select-none`}
+      style={{ background: `linear-gradient(135deg, ${bg}, ${fg})`, color: '#fff', fontFamily: 'Satoshi' }}
+    >
+      {initials}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SectionHeader — consistent section labeling
+// ---------------------------------------------------------------------------
+
+export function SectionHeader({ title, action, live = false }: { title: string; action?: ReactNode; live?: boolean }) {
+  return (
+    <div className="flex items-center justify-between mb-0.5">
+      <div className="flex items-center gap-2.5">
+        <h3 className="text-[14px] md:text-[15px] font-bold" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>
+          {title}
+        </h3>
+        {live && (
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full live-glow" style={{ background: 'var(--success)' }} />
+            <span className="text-[10px] md:text-[11px] font-semibold uppercase tracking-wider badge-inline" style={{ color: 'var(--success)' }}>Live</span>
+          </span>
+        )}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// LiveIndicator — small pulsing dot with optional label
+// ---------------------------------------------------------------------------
+
+export function LiveIndicator({ label }: { label?: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="w-2 h-2 rounded-full live-glow" style={{ background: 'var(--success)' }} />
+      {label && <span className="text-[10.5px] font-semibold badge-inline" style={{ color: 'var(--success)' }}>{label}</span>}
+    </span>
   );
 }

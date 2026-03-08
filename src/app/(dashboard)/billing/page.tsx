@@ -17,10 +17,18 @@ function Meter({ label, used, limit, icon }: { label:string; used:number; limit:
     <div className="py-3 md:py-4" style={{ borderBottom:'1px solid #f0f2f5' }}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2"><span style={{ color:'var(--text-dark-secondary)' }}>{icon}</span><span className="text-[12px] md:text-[13px] font-medium" style={{ color:'var(--text-dark)' }}>{label}</span></div>
-        <span className="text-[12px] md:text-[13px] font-semibold tabular-nums" style={{ color:'var(--text-dark)' }}>{used.toLocaleString()} / {limit.toLocaleString()}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[12px] md:text-[13px] font-bold tabular-nums" style={{ color }}>{used.toLocaleString()}</span>
+          <span className="text-[11px]" style={{ color:'var(--text-dark-secondary)' }}>/ {limit.toLocaleString()}</span>
+        </div>
       </div>
-      <div className="w-full h-2 rounded-full overflow-hidden" style={{ background:'#e8eaef' }}><div className="h-full rounded-full transition-all duration-500" style={{ width:`${pct}%`, background:color }}/></div>
-      {pct>=95&&<div className="flex items-center gap-1.5 mt-2"><AlertTriangle size={12} style={{ color:'var(--danger)' }}/><span className="text-[11px] font-medium" style={{ color:'var(--danger)' }}>Approaching limit</span></div>}
+      <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background:'#e8eaef' }}>
+        <div className="h-full rounded-full transition-all duration-700" style={{ width:`${pct}%`, background: `linear-gradient(90deg, ${color}88, ${color})` }}/>
+      </div>
+      <div className="flex items-center justify-between mt-1.5">
+        <div>{pct>=95&&<div className="flex items-center gap-1.5"><AlertTriangle size={11} style={{ color:'var(--danger)' }}/><span className="text-[10.5px] font-medium" style={{ color:'var(--danger)' }}>Approaching limit</span></div>}</div>
+        <span className="text-[10.5px] font-semibold tabular-nums" style={{ color: 'var(--text-dark-secondary)' }}>{Math.round(pct)}%</span>
+      </div>
     </div>
   );
 }
@@ -33,18 +41,21 @@ export default function BillingPage() {
         {/* Current plan + usage — stack on mobile */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           <Card>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:'var(--accent-soft)', color:'var(--accent)' }}><Zap size={16}/></div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background:'var(--accent)', boxShadow:'var(--shadow-glow)' }}><Zap size={18} color="#0b0e14"/></div>
               <div>
-                <h3 className="text-[14px] md:text-[15px] font-bold" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>Growth Plan</h3>
-                <p className="text-[11px] md:text-[12px]" style={{ color:'var(--text-dark-secondary)' }}>Monthly</p>
+                <h3 className="text-[15px] md:text-[16px] font-bold" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>Growth Plan</h3>
+                <p className="text-[11px] md:text-[12px]" style={{ color:'var(--text-dark-secondary)' }}>Billed monthly</p>
               </div>
             </div>
-            <div className="mb-4">
-              <span className="text-[28px] md:text-[32px] font-bold" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>$597</span>
-              <span className="text-[13px] md:text-[14px]" style={{ color:'var(--text-dark-secondary)' }}>/mo</span>
+            <div className="mb-5">
+              <span className="text-[32px] md:text-[36px] font-bold count-up" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>$597</span>
+              <span className="text-[14px]" style={{ color:'var(--text-dark-secondary)' }}>/mo</span>
             </div>
-            <Button variant="secondary" size="sm" className="w-full"><CreditCard size={14}/> Manage Payment</Button>
+            <div className="text-[12px] mb-4 px-3 py-2 rounded-lg" style={{ background:'var(--success-soft)', color:'var(--success)' }}>
+              Next billing: April 7, 2026
+            </div>
+            <Button variant="secondary" size="md" className="w-full"><CreditCard size={14}/> Manage Payment</Button>
           </Card>
           <Card className="lg:col-span-2">
             <h3 className="text-[14px] md:text-[15px] font-bold mb-3 md:mb-4" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>Current Usage</h3>
@@ -60,8 +71,8 @@ export default function BillingPage() {
             {PLANS.map(p => {
               const cur = p.id==='growth';
               return (
-                <div key={p.id} className="rounded-xl p-5 md:p-6 relative" style={{ background:'#fff', border:cur?'2px solid var(--accent)':'1px solid #e8eaef', boxShadow:cur?'var(--shadow-glow)':'var(--shadow-sm)' }}>
-                  {p.popular&&<div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] md:text-[11px] font-bold px-3 py-1 rounded-full whitespace-nowrap" style={{ background:'var(--accent)', color:'#0b0e14' }}>POPULAR</div>}
+                <div key={p.id} className="rounded-xl p-5 md:p-6 relative transition-all duration-200 hover:-translate-y-1 hover:shadow-lg" style={{ background: cur ? 'linear-gradient(135deg, #fffbeb, #ffffff)' : '#fff', border:cur?'2px solid var(--accent)':'1px solid #e8eaef', boxShadow:cur?'var(--shadow-glow)':'var(--shadow-sm)' }}>
+                  {p.popular&&<div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] md:text-[11px] font-bold px-3 py-1 rounded-full whitespace-nowrap accent-gradient-bar" style={{ color:'#0b0e14' }}>MOST POPULAR</div>}
                   <h3 className="text-[15px] md:text-[16px] font-bold mb-1" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>{p.name}</h3>
                   <div className="flex items-baseline gap-1 mb-4 md:mb-5">
                     <span className="text-[30px] md:text-[36px] font-bold" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>${p.price}</span>

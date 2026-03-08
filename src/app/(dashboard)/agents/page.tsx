@@ -1,6 +1,6 @@
 'use client';
 import { TopBar } from '@/components/dashboard/sidebar';
-import { Badge, Button, Card, AGENT_STATUS_VARIANT } from '@/components/ui/primitives';
+import { Badge, Button, Card, AGENT_STATUS_VARIANT, LiveIndicator } from '@/components/ui/primitives';
 import { Bot, Plus, Play, Pause, Settings, MessageSquare, Calendar, TrendingUp, Clock, Zap, Phone, Mail, BookOpen } from 'lucide-react';
 
 const AGENTS = [
@@ -12,11 +12,12 @@ const AGENTS = [
 const VC: Record<string,string> = { hvac:'#3b82f6', roofing:'#f97316', med_spa:'#d946ef', dental:'#06b6d4' };
 
 function Mini({ icon, value, label }: { icon: React.ReactNode; value: string|number; label: string }) {
+  const isZero = value === 0 || value === '-';
   return (
     <div className="flex items-center gap-2">
-      <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background:'#f0f2f5', color:'var(--text-dark-secondary)' }}>{icon}</div>
+      <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: isZero ? '#f0f2f5' : 'var(--accent-soft)', color: isZero ? 'var(--text-dark-secondary)' : 'var(--accent)' }}>{icon}</div>
       <div>
-        <div className="text-[13px] md:text-[14px] font-bold tabular-nums" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>{value}</div>
+        <div className="text-[13px] md:text-[14px] font-bold tabular-nums" style={{ color: isZero ? 'var(--text-dark-secondary)' : 'var(--text-dark)', fontFamily:'Satoshi' }}>{value}</div>
         <div className="text-[10px] md:text-[11px]" style={{ color:'var(--text-dark-secondary)' }}>{label}</div>
       </div>
     </div>
@@ -35,7 +36,7 @@ export default function AgentsPage() {
           const vc = VC[a.vertical]||'#8b5cf6';
           return (
             <Card key={a.id} padding={false} className="group animate-fade-in overflow-hidden">
-              <div className="h-1" style={{ background:vc }}/>
+              <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${vc}, ${vc}88)` }}/>
               <div className="p-4 md:p-5 pb-3 md:pb-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
@@ -44,6 +45,7 @@ export default function AgentsPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-[15px] md:text-[16px] font-bold" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>{a.name}</h3>
                         <Badge variant={AGENT_STATUS_VARIANT[a.status]} dot>{a.status}</Badge>
+                        {a.status === 'active' && <LiveIndicator />}
                       </div>
                       <p className="text-[12px] md:text-[12.5px] mt-1 line-clamp-2" style={{ color:'var(--text-dark-secondary)' }}>{a.desc}</p>
                     </div>

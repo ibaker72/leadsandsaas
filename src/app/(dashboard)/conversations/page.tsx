@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { TopBar } from '@/components/dashboard/sidebar';
-import { Badge, Button, LEAD_STATUS_VARIANT } from '@/components/ui/primitives';
-import { Search, Bot, User, Send, Phone, Mail, Pause, Play, ChevronLeft, Calendar, Info, MessageSquare } from 'lucide-react';
+import { Badge, Button, LEAD_STATUS_VARIANT, Avatar, LiveIndicator } from '@/components/ui/primitives';
+import { Search, Bot, User, Send, Phone, Mail, Pause, Play, ChevronLeft, Calendar, Info, Sparkles } from 'lucide-react';
 
 const CONVOS = [
   { id: '1', name: 'Sarah Mitchell', phone: '+1 (555) 234-5678', ch: 'sms' as const, agent: 'HVAC Sales Pro', msg: 'Yes, I need my AC looked at ASAP.', time: '2m', unread: true, status: 'contacted', score: 72, ai: true },
@@ -74,7 +74,7 @@ export default function ConversationsPage() {
               <button
                 key={c.id}
                 onClick={() => setSelId(c.id)}
-                className="w-full text-left px-4 py-4 transition-all relative"
+                className="w-full text-left px-4 py-3.5 transition-all relative row-hover-accent"
                 style={{
                   background: c.id === selId ? '#f0f2f5' : 'transparent',
                   borderBottom: '1px solid #f0f2f5',
@@ -83,23 +83,28 @@ export default function ConversationsPage() {
                 {c.id === selId && (
                   <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full hidden md:block" style={{ background: 'var(--accent)' }} />
                 )}
-                <div className="flex items-start justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[13.5px] font-semibold" style={{ color: 'var(--text-dark)' }}>{c.name}</span>
-                    {c.unread && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--accent)' }} />}
-                  </div>
-                  <span className="text-[11px] shrink-0 ml-2" style={{ color: 'var(--text-dark-secondary)' }}>{c.time}</span>
-                </div>
-                <p className="text-[12.5px] line-clamp-2 mb-2" style={{ color: 'var(--text-dark-secondary)' }}>{c.msg}</p>
-                <div className="flex items-center gap-2">
-                  <Badge variant={LEAD_STATUS_VARIANT[c.status] || 'muted'}>{c.status}</Badge>
-                  {c.ch === 'sms' ? <Phone size={11} style={{ color: 'var(--text-dark-secondary)' }} /> : <Mail size={11} style={{ color: 'var(--text-dark-secondary)' }} />}
-                  {c.ai && (
-                    <div className="flex items-center gap-1 ml-auto">
-                      <Bot size={12} style={{ color: 'var(--accent)' }} />
-                      <span className="text-[10.5px] font-medium badge-inline" style={{ color: 'var(--accent)' }}>AI</span>
+                <div className="flex items-start gap-3">
+                  <Avatar name={c.name} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13.5px] font-semibold" style={{ color: 'var(--text-dark)' }}>{c.name}</span>
+                        {c.unread && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--accent)' }} />}
+                      </div>
+                      <span className="text-[10.5px] shrink-0 ml-2 tabular-nums" style={{ color: 'var(--text-dark-secondary)' }}>{c.time}</span>
                     </div>
-                  )}
+                    <p className="text-[12.5px] line-clamp-1 mb-1.5" style={{ color: 'var(--text-dark-secondary)' }}>{c.msg}</p>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={LEAD_STATUS_VARIANT[c.status] || 'muted'}>{c.status}</Badge>
+                      {c.ch === 'sms' ? <Phone size={10} style={{ color: 'var(--text-dark-secondary)' }} /> : <Mail size={10} style={{ color: 'var(--text-dark-secondary)' }} />}
+                      {c.ai && (
+                        <div className="flex items-center gap-1 ml-auto">
+                          <Bot size={11} style={{ color: 'var(--accent)' }} />
+                          <span className="text-[10px] font-medium badge-inline" style={{ color: 'var(--accent)' }}>AI</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </button>
             ))}
@@ -185,7 +190,8 @@ export default function ConversationsPage() {
                     {m.dir === 'out' && (m as any).actions && (
                       <div className="flex flex-wrap gap-1 mt-1.5 px-1">
                         {((m as any).actions as string[]).map((a, i) => (
-                          <span key={i} className="text-[9px] md:text-[10px] px-2 py-0.5 rounded-md font-medium badge-inline" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                          <span key={i} className="text-[9px] md:text-[10px] px-2 py-0.5 rounded-md font-medium badge-inline flex items-center gap-1" style={{ background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid rgba(245,158,11,0.15)' }}>
+                            <Sparkles size={8} />
                             {a}
                           </span>
                         ))}
@@ -253,17 +259,19 @@ export default function ConversationsPage() {
               </button>
 
               <div className="text-center mb-5">
-                <div className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center text-[18px] font-bold" style={{ background: 'var(--accent-soft)', color: 'var(--accent)', fontFamily: 'Satoshi' }}>
-                  {sel.name.split(' ').map((n) => n[0]).join('')}
-                </div>
-                <h4 className="text-[15px] font-bold" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>{sel.name}</h4>
+                <Avatar name={sel.name} size="lg" />
+                <h4 className="text-[15px] font-bold mt-3" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>{sel.name}</h4>
                 <p className="text-[12.5px] mt-0.5" style={{ color: 'var(--text-dark-secondary)' }}>{sel.phone}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-5">
                 <div className="rounded-lg p-3 text-center" style={{ background: '#f0f2f5' }}>
-                  <div className="text-[18px] font-bold" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>{sel.score}</div>
+                  <div className="text-[18px] font-bold" style={{ color: sel.score >= 70 ? 'var(--success)' : sel.score >= 40 ? 'var(--accent)' : 'var(--danger)', fontFamily: 'Satoshi' }}>{sel.score}</div>
                   <div className="text-[11px]" style={{ color: 'var(--text-dark-secondary)' }}>Score</div>
+                  {/* Mini score bar */}
+                  <div className="w-full h-1 rounded-full mt-1.5 overflow-hidden" style={{ background: '#e2e5eb' }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${sel.score}%`, background: sel.score >= 70 ? 'var(--success)' : sel.score >= 40 ? 'var(--accent)' : 'var(--danger)' }} />
+                  </div>
                 </div>
                 <div className="rounded-lg p-3 text-center" style={{ background: '#f0f2f5' }}>
                   <div className="text-[18px] font-bold" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>5</div>

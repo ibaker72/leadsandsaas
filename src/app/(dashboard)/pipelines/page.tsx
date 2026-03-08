@@ -23,7 +23,9 @@ export default function PipelinePage() {
           {STAGES.map(st => {
             const sv = st.leads.reduce((a,l)=>a+l.val,0);
             return (
-              <div key={st.id} className="w-[260px] md:w-[280px] shrink-0 flex flex-col rounded-xl snap-start" style={{ background:'#f8f9fb', border:'1px solid #e8eaef', maxHeight:'calc(100vh - 140px)' }}>
+              <div key={st.id} className="w-[260px] md:w-[280px] shrink-0 flex flex-col rounded-xl snap-start overflow-hidden" style={{ background:'#f8f9fb', border:'1px solid #e8eaef', maxHeight:'calc(100vh - 140px)' }}>
+                {/* Stage color header */}
+                <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${st.color}, ${st.color}66)` }} />
                 <div className="p-3 md:p-3.5 shrink-0">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
@@ -33,23 +35,30 @@ export default function PipelinePage() {
                     </div>
                     <button className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-200 btn-icon-sm"><Plus size={14} style={{ color:'var(--text-dark-secondary)' }}/></button>
                   </div>
-                  <div className="text-[11px] md:text-[12px] font-semibold tabular-nums" style={{ color:'var(--text-dark-secondary)' }}>${sv.toLocaleString()}</div>
+                  <div className="text-[12px] md:text-[13px] font-bold tabular-nums" style={{ color: st.color }}>${sv.toLocaleString()}</div>
                 </div>
                 <div className="flex-1 overflow-y-auto px-2 md:px-2.5 pb-2.5">
-                  {st.leads.map(l => (
-                    <div key={l.id} className="rounded-lg p-3 md:p-3.5 mb-2 md:mb-2.5 cursor-pointer active:scale-[0.98] transition-transform group" style={{ background:'#fff', border:'1px solid #e8eaef', boxShadow:'var(--shadow-sm)' }}>
-                      <div className="flex items-start justify-between mb-1.5 md:mb-2">
-                        <span className="text-[12px] md:text-[13px] font-semibold" style={{ color:'var(--text-dark)' }}>{l.name}</span>
-                        <button className="opacity-0 group-hover:opacity-100 transition-opacity btn-icon-sm"><MoreHorizontal size={14} style={{ color:'var(--text-dark-secondary)' }}/></button>
+                  {st.leads.map(l => {
+                    const urgencyColor = l.days >= 5 ? 'var(--danger)' : l.days >= 3 ? 'var(--warning)' : 'var(--text-dark-secondary)';
+                    return (
+                    <div key={l.id} className="rounded-lg mb-2 md:mb-2.5 cursor-pointer active:scale-[0.98] transition-transform group overflow-hidden" style={{ background:'#fff', border:'1px solid #e8eaef', boxShadow:'var(--shadow-sm)' }}>
+                      {/* Value-proportional accent at top */}
+                      <div className="h-[2px]" style={{ background: st.color, opacity: Math.min(l.val / 15000, 1) * 0.6 + 0.4 }} />
+                      <div className="p-3 md:p-3.5">
+                        <div className="flex items-start justify-between mb-1.5 md:mb-2">
+                          <span className="text-[12px] md:text-[13px] font-semibold" style={{ color:'var(--text-dark)' }}>{l.name}</span>
+                          <button className="opacity-0 group-hover:opacity-100 transition-opacity btn-icon-sm"><MoreHorizontal size={14} style={{ color:'var(--text-dark-secondary)' }}/></button>
+                        </div>
+                        <div className="text-[11px] md:text-[12px] mb-2" style={{ color:'var(--text-dark-secondary)' }}>{l.svc}</div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[14px] md:text-[15px] font-bold tabular-nums" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>${l.val.toLocaleString()}</span>
+                          <span className="text-[10px] md:text-[11px] font-semibold px-1.5 py-0.5 rounded-md" style={{ color: urgencyColor, background: l.days >= 3 ? `${urgencyColor}14` : 'transparent' }}>{l.days}d</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] px-2 py-1 rounded-md" style={{ background:'#f5f6f8', color:'var(--text-dark-secondary)' }}>{l.ch==='sms'?<Phone size={9}/>:<Mail size={9}/>}Next action pending</div>
                       </div>
-                      <div className="text-[11px] md:text-[12px] mb-2" style={{ color:'var(--text-dark-secondary)' }}>{l.svc}</div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[13px] md:text-[14px] font-bold tabular-nums" style={{ color:'var(--text-dark)', fontFamily:'Satoshi' }}>${l.val.toLocaleString()}</span>
-                        <span className="text-[10px] md:text-[11px]" style={{ color: l.days>3?'var(--danger)':'var(--text-dark-secondary)' }}>{l.days}d</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] px-2 py-1 rounded-md" style={{ background:'#f5f6f8', color:'var(--text-dark-secondary)' }}>{l.ch==='sms'?<Phone size={9}/>:<Mail size={9}/>}Next action pending</div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
