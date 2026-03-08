@@ -99,7 +99,13 @@ export default function SignupPage() {
         // Refresh the session to pick up the new JWT claims
         await supabase.auth.refreshSession();
 
-        router.push('/overview');
+        // Store trial info for dashboard banner
+        const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+        localStorage.setItem('ls_trial_ends_at', trialEndsAt);
+        localStorage.setItem('ls_plan', 'trial');
+        localStorage.setItem('ls_onboarding_complete', 'false');
+
+        router.push('/onboarding');
         router.refresh();
         return;
       }

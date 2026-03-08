@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { TopBar } from '@/components/dashboard/sidebar';
-import { Badge, Button, Card, LEAD_STATUS_VARIANT, Avatar } from '@/components/ui/primitives';
+import { Badge, Button, Card, LEAD_STATUS_VARIANT, Avatar, Modal, ComingSoonContent } from '@/components/ui/primitives';
 import { Search, Download, Plus, ChevronLeft, ChevronRight, MoreHorizontal, Mail, Bot } from 'lucide-react';
 
 const LEADS = [
@@ -31,6 +31,9 @@ function ScoreBar({ score }: { score: number }) {
 export default function LeadsPage() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [modal, setModal] = useState<'add' | 'export' | 'actions' | null>(null);
+  const [actionLead, setActionLead] = useState<string | null>(null);
+
   const filtered = LEADS.filter((l) => {
     if (filter !== 'all' && l.status !== filter) return false;
     if (search) return l.name.toLowerCase().includes(search.toLowerCase()) || l.email.toLowerCase().includes(search.toLowerCase());
@@ -56,12 +59,12 @@ export default function LeadsPage() {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" className="flex-1 sm:flex-none"><Download size={14} /> Export</Button>
-            <Button variant="primary" size="sm" className="flex-1 sm:flex-none"><Plus size={14} /> Add Lead</Button>
+            <Button variant="secondary" size="sm" className="flex-1 sm:flex-none" onClick={() => setModal('export')}><Download size={14} /> Export</Button>
+            <Button variant="primary" size="sm" className="flex-1 sm:flex-none" onClick={() => setModal('add')}><Plus size={14} /> Add Lead</Button>
           </div>
         </div>
 
-        {/* Table — horizontal scroll wrapper on mobile */}
+        {/* Table */}
         <Card padding={false}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px]">
@@ -92,7 +95,10 @@ export default function LeadsPage() {
                     </td>
                     <td className="py-3 px-3 md:px-4"><span className="text-[12px] md:text-[12.5px] whitespace-nowrap" style={{ color: 'var(--text-dark-secondary)' }}>{l.lastContact}</span></td>
                     <td className="py-3 px-3 md:px-4">
-                      <button className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-gray-100 btn-icon-sm">
+                      <button
+                        className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-gray-100 btn-icon-sm"
+                        onClick={(e) => { e.stopPropagation(); setActionLead(l.name); setModal('actions'); }}
+                      >
                         <MoreHorizontal size={15} style={{ color: 'var(--text-dark-secondary)' }} />
                       </button>
                     </td>
@@ -117,6 +123,29 @@ export default function LeadsPage() {
           </div>
         </Card>
       </div>
+
+      <Modal open={modal === 'add'} onClose={() => setModal(null)} title="Add Lead">
+        <ComingSoonContent feature="Add Lead" description="Manual lead entry and CSV import are coming soon. For now, leads are captured automatically through the website widget and messaging channels." />
+        <Button variant="primary" size="md" className="w-full mt-4" onClick={() => setModal(null)}>Got it</Button>
+      </Modal>
+
+      <Modal open={modal === 'export'} onClose={() => setModal(null)} title="Export Leads">
+        <ComingSoonContent feature="Export to CSV" description="Lead export with custom filters, date ranges, and field selection will be available in the next update." />
+        <Button variant="primary" size="md" className="w-full mt-4" onClick={() => setModal(null)}>Got it</Button>
+      </Modal>
+
+      <Modal open={modal === 'actions'} onClose={() => setModal(null)} title={actionLead ? `${actionLead}` : 'Lead Actions'}>
+        <div className="space-y-2">
+          {['View full profile', 'Edit lead details', 'Assign to agent', 'Move to pipeline stage', 'Send message'].map((action) => (
+            <button key={action} onClick={() => setModal(null)}
+              className="w-full text-left px-4 py-3 rounded-lg text-[13px] font-medium transition-colors hover:bg-gray-50"
+              style={{ color: 'var(--text-dark)', border: '1px solid #f0f2f5' }}>
+              {action}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] mt-3 text-center" style={{ color: 'var(--text-dark-secondary)' }}>Full lead management actions coming soon</p>
+      </Modal>
     </>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
+import { useState } from 'react';
 import { TopBar } from '@/components/dashboard/sidebar';
-import { Badge, Button, Card, AGENT_STATUS_VARIANT, LiveIndicator } from '@/components/ui/primitives';
+import { Badge, Button, Card, AGENT_STATUS_VARIANT, LiveIndicator, Modal, ComingSoonContent } from '@/components/ui/primitives';
 import { Bot, Plus, Play, Pause, Settings, MessageSquare, Calendar, TrendingUp, Clock, Zap, Phone, Mail, BookOpen } from 'lucide-react';
 
 const AGENTS = [
@@ -25,12 +26,20 @@ function Mini({ icon, value, label }: { icon: React.ReactNode; value: string|num
 }
 
 export default function AgentsPage() {
+  const [modal, setModal] = useState<'create' | 'configure' | 'toggle' | null>(null);
+  const [toggleAgent, setToggleAgent] = useState<string | null>(null);
+
+  function handleToggle(agentName: string, action: string) {
+    setToggleAgent(`${action} "${agentName}"`);
+    setModal('toggle');
+  }
+
   return (
     <>
       <TopBar title="Agents" subtitle={`${AGENTS.length} agents · ${AGENTS.filter(a=>a.status==='active').length} active`} />
       <div className="flex-1 p-4 md:p-6 lg:p-8 space-y-4 md:space-y-5">
         <div className="flex items-center justify-end">
-          <Button variant="primary" size="md"><Plus size={15}/> New Agent</Button>
+          <Button variant="primary" size="md" onClick={() => setModal('create')}><Plus size={15}/> New Agent</Button>
         </div>
         {AGENTS.map(a => {
           const vc = VC[a.vertical]||'#8b5cf6';
@@ -51,8 +60,12 @@ export default function AgentsPage() {
                     </div>
                   </div>
                   <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    {a.status==='active'?<Button variant="ghost" size="sm"><Pause size={13}/> Pause</Button>:a.status==='draft'?<Button variant="primary" size="sm"><Play size={13}/> Activate</Button>:null}
-                    <Button variant="ghost" size="sm"><Settings size={14}/></Button>
+                    {a.status==='active'
+                      ? <Button variant="ghost" size="sm" onClick={() => handleToggle(a.name, 'Pause')}><Pause size={13}/> Pause</Button>
+                      : a.status==='draft'
+                      ? <Button variant="primary" size="sm" onClick={() => handleToggle(a.name, 'Activate')}><Play size={13}/> Activate</Button>
+                      : null}
+                    <Button variant="ghost" size="sm" onClick={() => setModal('configure')}><Settings size={14}/></Button>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mt-3">
@@ -62,7 +75,6 @@ export default function AgentsPage() {
                   <span className="text-[10px] md:text-[11px] ml-auto hidden sm:block" style={{ color:'var(--text-dark-secondary)' }}>Active {a.last}</span>
                 </div>
               </div>
-              {/* Stats — 3-col on mobile, 5-col on desktop */}
               <div className="px-4 md:px-5 py-3 md:py-4 grid grid-cols-3 md:grid-cols-5 gap-3 md:gap-4" style={{ borderTop:'1px solid #f0f2f5' }}>
                 <Mini icon={<MessageSquare size={13}/>} value={a.convos} label="Convos"/>
                 <Mini icon={<Calendar size={13}/>} value={a.booked} label="Booked"/>
@@ -72,13 +84,41 @@ export default function AgentsPage() {
               </div>
               {/* Mobile action row */}
               <div className="md:hidden px-4 py-3 flex gap-2" style={{ borderTop:'1px solid #f0f2f5' }}>
-                {a.status==='active'?<Button variant="ghost" size="sm" className="flex-1"><Pause size={13}/> Pause</Button>:a.status==='draft'?<Button variant="primary" size="sm" className="flex-1"><Play size={13}/> Activate</Button>:null}
-                <Button variant="secondary" size="sm" className="flex-1"><Settings size={13}/> Configure</Button>
+                {a.status==='active'
+                  ? <Button variant="ghost" size="sm" className="flex-1" onClick={() => handleToggle(a.name, 'Pause')}><Pause size={13}/> Pause</Button>
+                  : a.status==='draft'
+                  ? <Button variant="primary" size="sm" className="flex-1" onClick={() => handleToggle(a.name, 'Activate')}><Play size={13}/> Activate</Button>
+                  : null}
+                <Button variant="secondary" size="sm" className="flex-1" onClick={() => setModal('configure')}><Settings size={13}/> Configure</Button>
               </div>
             </Card>
           );
         })}
       </div>
+
+      <Modal open={modal === 'create'} onClose={() => setModal(null)} title="Create New Agent">
+        <ComingSoonContent
+          feature="Agent Builder"
+          description="The full agent builder with industry templates, custom prompts, knowledge base upload, and channel configuration is coming soon. For now, agents are pre-configured for your vertical."
+        />
+        <Button variant="primary" size="md" className="w-full mt-4" onClick={() => setModal(null)}>Got it</Button>
+      </Modal>
+
+      <Modal open={modal === 'configure'} onClose={() => setModal(null)} title="Agent Configuration">
+        <ComingSoonContent
+          feature="Agent Settings"
+          description="Detailed agent configuration including prompt editing, knowledge base management, channel settings, and response tuning will be available in the next update."
+        />
+        <Button variant="primary" size="md" className="w-full mt-4" onClick={() => setModal(null)}>Got it</Button>
+      </Modal>
+
+      <Modal open={modal === 'toggle'} onClose={() => setModal(null)} title="Agent Status">
+        <ComingSoonContent
+          feature={toggleAgent || 'Toggle Agent'}
+          description="Agent activation and pausing requires live connection to your messaging channels. This will be functional once your Twilio/email integrations are configured."
+        />
+        <Button variant="primary" size="md" className="w-full mt-4" onClick={() => setModal(null)}>Got it</Button>
+      </Modal>
     </>
   );
 }

@@ -257,3 +257,97 @@ export function LiveIndicator({ label }: { label?: string }) {
     </span>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Modal — lightweight dialog overlay
+// ---------------------------------------------------------------------------
+
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  size = 'md',
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+  size?: 'sm' | 'md' | 'lg';
+}) {
+  if (!open) return null;
+  const widths = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg' };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" />
+      <div
+        className={`relative ${widths[size]} w-full rounded-2xl p-5 md:p-6 animate-fade-in`}
+        style={{ background: '#fff', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[16px] md:text-[18px] font-bold" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>{title}</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors" style={{ color: 'var(--text-dark-secondary)' }}>
+            <span className="text-[18px] leading-none">&times;</span>
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TrialBanner — shows trial status at top of dashboard
+// ---------------------------------------------------------------------------
+
+export function TrialBanner({ daysLeft, onUpgrade }: { daysLeft: number; onUpgrade: () => void }) {
+  const urgent = daysLeft <= 3;
+  const expired = daysLeft <= 0;
+
+  return (
+    <div
+      className="flex items-center justify-between gap-3 px-4 md:px-6 py-2.5 text-[12px] md:text-[13px] font-medium shrink-0"
+      style={{
+        background: expired ? 'var(--danger-soft)' : urgent ? 'var(--warning-soft)' : 'var(--accent-soft)',
+        color: expired ? 'var(--danger)' : urgent ? 'var(--warning)' : 'var(--accent)',
+        borderBottom: '1px solid',
+        borderColor: expired ? 'var(--danger)' : urgent ? 'var(--warning)' : 'var(--accent)',
+        opacity: 0.95,
+      }}
+    >
+      <span>
+        {expired
+          ? 'Your free trial has expired. Upgrade to continue using all features.'
+          : `Free trial: ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`}
+      </span>
+      <button
+        onClick={onUpgrade}
+        className="px-3 py-1 rounded-md text-[11px] md:text-[12px] font-bold whitespace-nowrap transition-opacity hover:opacity-80"
+        style={{
+          background: expired ? 'var(--danger)' : urgent ? 'var(--warning)' : 'var(--accent)',
+          color: '#0b0e14',
+        }}
+      >
+        {expired ? 'Upgrade Now' : 'View Plans'}
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ComingSoonContent — reusable modal body for unimplemented features
+// ---------------------------------------------------------------------------
+
+export function ComingSoonContent({ feature, description }: { feature: string; description: string }) {
+  return (
+    <div className="text-center py-4">
+      <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+        <span className="text-[20px]">&#9889;</span>
+      </div>
+      <h4 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--text-dark)' }}>{feature}</h4>
+      <p className="text-[13px] leading-relaxed max-w-xs mx-auto" style={{ color: 'var(--text-dark-secondary)' }}>{description}</p>
+    </div>
+  );
+}

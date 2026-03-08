@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Bot, Users, MessageSquare, Calendar, GitBranch,
   Settings, CreditCard, Zap, Bell, HelpCircle, Menu, X, ChevronLeft,
 } from 'lucide-react';
+import { Modal, ComingSoonContent, Button } from '@/components/ui/primitives';
 
 // ---------------------------------------------------------------------------
 // Sidebar context — shared between Sidebar and TopBar
@@ -194,65 +195,108 @@ export function Sidebar() {
 
 export function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   const { setMobileOpen } = useContext(SidebarContext);
+  const [modal, setModal] = useState<'notifications' | 'help' | null>(null);
 
   return (
-    <header
-      className="h-14 md:h-16 flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-30 gap-4"
-      style={{
-        background: 'rgba(248, 249, 251, 0.88)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #e5e7eb',
-      }}
-    >
-      <div className="flex items-center gap-3 min-w-0">
-        {/* Hamburger — mobile only */}
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="w-9 h-9 rounded-lg flex items-center justify-center md:hidden shrink-0"
-          style={{ color: 'var(--text-dark)' }}
-        >
-          <Menu size={20} />
-        </button>
-
-        <div className="min-w-0">
-          <h1
-            className="text-[18px] md:text-[22px] font-bold tracking-tight truncate"
-            style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}
+    <>
+      <header
+        className="h-14 md:h-16 flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-30 gap-4"
+        style={{
+          background: 'rgba(248, 249, 251, 0.88)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid #e5e7eb',
+        }}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Hamburger — mobile only */}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="w-9 h-9 rounded-lg flex items-center justify-center md:hidden shrink-0"
+            style={{ color: 'var(--text-dark)' }}
           >
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="text-[12px] md:text-[13px] mt-0.5 truncate hidden sm:block" style={{ color: 'var(--text-dark-secondary)' }}>
-              {subtitle}
-            </p>
-          )}
-        </div>
-      </div>
+            <Menu size={20} />
+          </button>
 
-      <div className="flex items-center gap-2 md:gap-3 shrink-0">
-        <button
-          className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors relative hover:bg-gray-100"
-          style={{ color: 'var(--text-dark-secondary)' }}
-        >
-          <Bell size={18} />
-          <span
-            className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full status-dot-active"
-            style={{ background: 'var(--danger)' }}
-          />
-        </button>
-        <button
-          className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors hidden sm:flex hover:bg-gray-100"
-          style={{ color: 'var(--text-dark-secondary)' }}
-        >
-          <HelpCircle size={18} />
-        </button>
-        <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-bold"
-          style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-        >
-          JD
+          <div className="min-w-0">
+            <h1
+              className="text-[18px] md:text-[22px] font-bold tracking-tight truncate"
+              style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}
+            >
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="text-[12px] md:text-[13px] mt-0.5 truncate hidden sm:block" style={{ color: 'var(--text-dark-secondary)' }}>
+                {subtitle}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          <button
+            onClick={() => setModal('notifications')}
+            className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors relative hover:bg-gray-100"
+            style={{ color: 'var(--text-dark-secondary)' }}
+          >
+            <Bell size={18} />
+            <span
+              className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full status-dot-active"
+              style={{ background: 'var(--danger)' }}
+            />
+          </button>
+          <button
+            onClick={() => setModal('help')}
+            className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors hidden sm:flex hover:bg-gray-100"
+            style={{ color: 'var(--text-dark-secondary)' }}
+          >
+            <HelpCircle size={18} />
+          </button>
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-bold cursor-pointer hover:ring-2 hover:ring-offset-1 transition-all"
+            style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+          >
+            JD
+          </div>
+        </div>
+      </header>
+
+      <Modal open={modal === 'notifications'} onClose={() => setModal(null)} title="Notifications">
+        <div className="space-y-3 py-2">
+          {[
+            { text: 'New lead captured from web form', time: '2m ago', color: 'var(--info)' },
+            { text: 'AI agent booked an appointment', time: '8m ago', color: 'var(--success)' },
+            { text: 'Lead scored above 80 — high intent', time: '15m ago', color: 'var(--accent)' },
+          ].map((n, i) => (
+            <div key={i} className="flex items-start gap-3 p-3 rounded-lg transition-colors hover:bg-gray-50" style={{ border: '1px solid #f0f2f5' }}>
+              <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: n.color }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium" style={{ color: 'var(--text-dark)' }}>{n.text}</p>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-dark-secondary)' }}>{n.time}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-center mt-3" style={{ color: 'var(--text-dark-secondary)' }}>
+          Real-time notifications will update automatically once messaging channels are connected
+        </p>
+      </Modal>
+
+      <Modal open={modal === 'help'} onClose={() => setModal(null)} title="Help & Support">
+        <div className="space-y-3 py-2">
+          {[
+            { label: 'Getting Started Guide', desc: 'Learn how to set up your AI agents' },
+            { label: 'API Documentation', desc: 'Integrate LeadSaaS with your tools' },
+            { label: 'Contact Support', desc: 'Get help from our team' },
+          ].map((item) => (
+            <button key={item.label} onClick={() => setModal(null)}
+              className="w-full text-left p-3.5 rounded-lg transition-colors hover:bg-gray-50"
+              style={{ border: '1px solid #f0f2f5' }}>
+              <div className="text-[13px] font-semibold" style={{ color: 'var(--text-dark)' }}>{item.label}</div>
+              <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-dark-secondary)' }}>{item.desc}</div>
+            </button>
+          ))}
+        </div>
+      </Modal>
+    </>
   );
 }
