@@ -72,6 +72,11 @@ export default function BillingPage() {
       .catch(() => {});
   }, []);
 
+  /** Extract error message from API response (handles both {error} and {message,code} shapes) */
+  function extractError(data: Record<string, unknown>): string {
+    return (data.error as string) || (data.message as string) || '';
+  }
+
   async function handleUpgrade(planId: string) {
     setLoading(planId);
     try {
@@ -83,12 +88,21 @@ export default function BillingPage() {
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+        return; // don't clear loading — page is navigating
+      }
+      const errMsg = extractError(data);
+      if (res.status === 403) {
+        setErrorModal('Only the account owner can manage billing. Ask your admin to upgrade.');
+      } else if (res.status === 401) {
+        setErrorModal('Your session has expired. Please refresh and try again.');
+      } else if (errMsg.includes('STRIPE_SECRET_KEY')) {
+        setErrorModal('Billing is not configured yet. Please contact support.');
       } else {
-        setErrorModal(data.error || 'Failed to create checkout session. Please try again.');
-        setLoading(null);
+        setErrorModal(errMsg || 'Failed to start checkout. Please try again.');
       }
     } catch {
       setErrorModal('Network error. Please check your connection and try again.');
+    } finally {
       setLoading(null);
     }
   }
@@ -103,12 +117,17 @@ export default function BillingPage() {
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+        return;
+      }
+      const errMsg = extractError(data);
+      if (errMsg.includes('No billing account')) {
+        setErrorModal('No active subscription yet. Choose a plan below to get started.');
       } else {
-        setErrorModal(data.error || 'Unable to open billing portal. You may not have an active subscription yet.');
-        setPortalLoading(false);
+        setErrorModal(errMsg || 'Unable to open billing portal. Please try again.');
       }
     } catch {
       setErrorModal('Network error. Please check your connection and try again.');
+    } finally {
       setPortalLoading(false);
     }
   }
