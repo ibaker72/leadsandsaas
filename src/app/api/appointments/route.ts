@@ -84,8 +84,9 @@ export const POST = withAuth(async (req: NextRequest, ctx) => {
       .single();
 
     if (error) {
+      console.error('Appointment creation failed:', error.message, error.details);
       return NextResponse.json(
-        { error: 'Failed to create appointment' },
+        { error: error.message || 'Failed to create appointment' },
         { status: 500 }
       );
     }

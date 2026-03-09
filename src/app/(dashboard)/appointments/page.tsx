@@ -182,7 +182,8 @@ export default function AppointmentsPage() {
         showToast('Appointment created successfully');
       }
     } else {
-      showToast('Failed to create appointment. Please try again.');
+      const errMsg = res ? await res.json().then(d => d.error || d.message).catch(() => null) : null;
+      showToast(errMsg || 'Failed to create appointment. Please try again.');
     }
   }
 

@@ -41,7 +41,8 @@ export const POST = withAuth(async (req: NextRequest, ctx) => {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to create agent' }, { status: 500 });
+      console.error('Agent creation failed:', error.message, error.details);
+      return NextResponse.json({ error: error.message || 'Failed to create agent' }, { status: 500 });
     }
     return NextResponse.json({ agent }, { status: 201 });
   } catch {
