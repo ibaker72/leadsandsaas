@@ -48,7 +48,8 @@ export const POST = withAuth(async (req: NextRequest, ctx) => {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to create lead' }, { status: 500 });
+      console.error('Lead creation failed:', error.message, error.details);
+      return NextResponse.json({ error: error.message || 'Failed to create lead' }, { status: 500 });
     }
 
     // Auto-create pipeline entry in first stage

@@ -32,6 +32,7 @@ const VERTICALS = [
   { value: 'electrical', label: 'Electrical' },
   { value: 'legal', label: 'Legal' },
   { value: 'real_estate', label: 'Real Estate' },
+  { value: 'insurance', label: 'Insurance' },
   { value: 'auto_repair', label: 'Auto Repair' },
   { value: 'landscaping', label: 'Landscaping' },
   { value: 'cleaning', label: 'Cleaning' },
@@ -46,7 +47,7 @@ const RESPONSE_STYLES = [
   { value: 'empathetic', label: 'Empathetic' },
 ];
 
-const VC: Record<string,string> = { hvac:'#3b82f6', roofing:'#f97316', med_spa:'#d946ef', dental:'#06b6d4', plumbing:'#10b981', electrical:'#eab308', legal:'#6366f1', real_estate:'#ec4899', auto_repair:'#f43f5e', landscaping:'#22c55e', cleaning:'#14b8a6', general:'#8b5cf6' };
+const VC: Record<string,string> = { hvac:'#3b82f6', roofing:'#f97316', med_spa:'#d946ef', dental:'#06b6d4', plumbing:'#10b981', electrical:'#eab308', legal:'#6366f1', real_estate:'#ec4899', insurance:'#0ea5e9', auto_repair:'#f43f5e', landscaping:'#22c55e', cleaning:'#14b8a6', general:'#8b5cf6' };
 
 function Mini({ icon, value, label }: { icon: React.ReactNode; value: string|number; label: string }) {
   const isZero = value === 0 || value === '-';
@@ -155,7 +156,8 @@ export default function AgentsPage() {
       setModal(null);
       resetCreateForm();
     } else {
-      showToast('Failed to create agent. Please try again.');
+      const errMsg = res ? await res.json().then(d => d.error || d.message).catch(() => null) : null;
+      showToast(errMsg || 'Failed to create agent. Please try again.');
     }
   }
 

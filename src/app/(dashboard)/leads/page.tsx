@@ -166,7 +166,8 @@ export default function LeadsPage() {
       resetForm();
       setAddModalOpen(false);
     } else {
-      showToast('Failed to add lead. Please try again.');
+      const errMsg = res ? await res.json().then(d => d.error || d.message).catch(() => null) : null;
+      showToast(errMsg || 'Failed to add lead. Please try again.');
     }
   }
 
