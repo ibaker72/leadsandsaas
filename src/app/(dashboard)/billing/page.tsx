@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TopBar } from '@/components/dashboard/sidebar';
 import { Card, Button, Badge, Modal, ComingSoonContent } from '@/components/ui/primitives';
 import { Check, Zap, MessageSquare, Bot, Users, ArrowRight, CreditCard, AlertTriangle, Loader2, Crown, Shield } from 'lucide-react';
@@ -11,9 +11,14 @@ const PLANS = [
   { id: 'scale' as const, name: 'Scale', monthly: 1497, annual: 1247, features: ['10 AI Agents', '10,000 conversations/mo', 'Unlimited team', 'All channels + Voice', 'Priority support', 'White-label'], cta: 'Go Scale' },
 ];
 
-/* ---------- Usage (mock — would come from org data in production) ---------- */
-const USAGE = { convos: { used: 1247, limit: 2000 }, agents: { used: 2, limit: 3 }, users: { used: 3, limit: 5 } };
-const CURRENT_PLAN = 'growth';
+/* ---------- Default limits per plan ---------- */
+const PLAN_LIMITS: Record<string, { agents: number; convos: number; users: number }> = {
+  trial: { agents: 1, convos: 500, users: 1 },
+  starter: { agents: 1, convos: 500, users: 1 },
+  growth: { agents: 3, convos: 2000, users: 5 },
+  scale: { agents: 10, convos: 10000, users: 999 },
+  enterprise: { agents: 999, convos: 999999, users: 999 },
+};
 
 function Meter({ label, used, limit, icon }: { label: string; used: number; limit: number; icon: React.ReactNode }) {
   const pct = Math.min((used / limit) * 100, 100);
@@ -46,6 +51,26 @@ export default function BillingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [errorModal, setErrorModal] = useState<string | null>(null);
+  const [currentPlan, setCurrentPlan] = useState('trial');
+  const [usage, setUsage] = useState({ convos: { used: 0, limit: 500 }, agents: { used: 0, limit: 1 }, users: { used: 0, limit: 1 } });
+
+  useEffect(() => {
+    // Fetch real org plan and usage data
+    fetch('/api/billing/status')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          if (data.plan) setCurrentPlan(data.plan);
+          const limits = PLAN_LIMITS[data.plan] || PLAN_LIMITS.trial;
+          setUsage({
+            convos: { used: data.conversations_used || 0, limit: data.limits?.max_conversations_monthly || limits.convos },
+            agents: { used: data.agents_count || 0, limit: data.limits?.max_agents || limits.agents },
+            users: { used: data.members_count || 0, limit: data.limits?.max_users || limits.users },
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleUpgrade(planId: string) {
     setLoading(planId);
@@ -100,16 +125,21 @@ export default function BillingPage() {
                 <Zap size={18} color="#0b0e14" />
               </div>
               <div>
-                <h3 className="text-[15px] md:text-[16px] font-bold" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>Growth Plan</h3>
-                <p className="text-[11px] md:text-[12px]" style={{ color: 'var(--text-dark-secondary)' }}>Billed monthly</p>
+                <h3 className="text-[15px] md:text-[16px] font-bold" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>{(PLANS.find(p => p.id === currentPlan)?.name || currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1))} Plan</h3>
+                <p className="text-[11px] md:text-[12px]" style={{ color: 'var(--text-dark-secondary)' }}>{currentPlan === 'trial' ? '14-day trial' : 'Active subscription'}</p>
               </div>
             </div>
             <div className="mb-5">
-              <span className="text-[32px] md:text-[36px] font-bold count-up" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>$597</span>
-              <span className="text-[14px]" style={{ color: 'var(--text-dark-secondary)' }}>/mo</span>
+              {(() => { const p = PLANS.find(pl => pl.id === currentPlan); return p ? (
+                <><span className="text-[32px] md:text-[36px] font-bold count-up" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>${p.monthly}</span>
+                <span className="text-[14px]" style={{ color: 'var(--text-dark-secondary)' }}>/mo</span></>
+              ) : (
+                <><span className="text-[32px] md:text-[36px] font-bold count-up" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>$0</span>
+                <span className="text-[14px]" style={{ color: 'var(--text-dark-secondary)' }}> trial</span></>
+              ); })()}
             </div>
-            <div className="text-[12px] mb-4 px-3 py-2 rounded-lg" style={{ background: 'var(--success-soft)', color: 'var(--success)' }}>
-              Next billing: April 7, 2026
+            <div className="text-[12px] mb-4 px-3 py-2 rounded-lg" style={{ background: currentPlan === 'trial' ? 'var(--warning-soft, #fef3c7)' : 'var(--success-soft)', color: currentPlan === 'trial' ? 'var(--warning, #d97706)' : 'var(--success)' }}>
+              {currentPlan === 'trial' ? 'Free trial — upgrade to unlock full features' : 'Active subscription'}
             </div>
             <Button variant="secondary" size="md" className="w-full" onClick={handleManagePayment} disabled={portalLoading}>
               {portalLoading ? <><Loader2 size={14} className="animate-spin" /> Opening portal...</> : <><CreditCard size={14} /> Manage Payment</>}
@@ -117,9 +147,9 @@ export default function BillingPage() {
           </Card>
           <Card className="lg:col-span-2">
             <h3 className="text-[14px] md:text-[15px] font-bold mb-3 md:mb-4" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>Current Usage</h3>
-            <Meter label="Conversations" used={USAGE.convos.used} limit={USAGE.convos.limit} icon={<MessageSquare size={14} />} />
-            <Meter label="AI Agents" used={USAGE.agents.used} limit={USAGE.agents.limit} icon={<Bot size={14} />} />
-            <Meter label="Team Members" used={USAGE.users.used} limit={USAGE.users.limit} icon={<Users size={14} />} />
+            <Meter label="Conversations" used={usage.convos.used} limit={usage.convos.limit} icon={<MessageSquare size={14} />} />
+            <Meter label="AI Agents" used={usage.agents.used} limit={usage.agents.limit} icon={<Bot size={14} />} />
+            <Meter label="Team Members" used={usage.users.used} limit={usage.users.limit} icon={<Users size={14} />} />
           </Card>
         </div>
 
@@ -158,7 +188,7 @@ export default function BillingPage() {
           {/* Plan cards — responsive grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
             {PLANS.map((p) => {
-              const cur = p.id === CURRENT_PLAN;
+              const cur = p.id === currentPlan;
               const price = annual ? p.annual : p.monthly;
               const isLoading = loading === p.id;
               return (
