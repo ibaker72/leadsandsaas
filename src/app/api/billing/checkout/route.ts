@@ -32,7 +32,7 @@ export const POST = withAuth(async (req: NextRequest, ctx) => {
   );
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error.message }, { status: 500 });
+    return NextResponse.json({ error: result.error.message }, { status: result.error.statusCode || 500 });
   }
 
   return NextResponse.json({ url: result.value.url });

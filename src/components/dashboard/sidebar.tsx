@@ -135,8 +135,8 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         ))}
       </nav>
 
-      {/* Bottom nav */}
-      <div className="px-3 py-4 space-y-1" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
+      {/* Bottom nav — shrink-0 ensures it's always visible in mobile drawer */}
+      <div className="px-3 py-4 space-y-1 shrink-0" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
         {NAV_BOTTOM.map((item) => (
           <NavLink key={item.href} item={item} />
         ))}
@@ -195,6 +195,7 @@ export function Sidebar() {
 
 export function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   const { setMobileOpen } = useContext(SidebarContext);
+  const pathname = usePathname();
   const [modal, setModal] = useState<'notifications' | 'help' | null>(null);
 
   return (
@@ -233,6 +234,17 @@ export function TopBar({ title, subtitle }: { title: string; subtitle?: string }
         </div>
 
         <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          {/* Mobile billing shortcut — visible on mobile when not already on billing page */}
+          {pathname !== '/billing' && (
+            <Link
+              href="/billing"
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-100 md:hidden"
+              style={{ color: 'var(--accent)' }}
+              title="Billing"
+            >
+              <CreditCard size={18} />
+            </Link>
+          )}
           <button
             onClick={() => setModal('notifications')}
             className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors relative hover:bg-gray-100"
