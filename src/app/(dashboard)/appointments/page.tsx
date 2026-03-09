@@ -143,47 +143,46 @@ export default function AppointmentsPage() {
 
     const startsAt = new Date(formDate + 'T' + formTime).toISOString();
     const endsAt = new Date(new Date(formDate + 'T' + formTime).getTime() + formDuration * 60000).toISOString();
-    const tempId = String(Date.now());
-
-    const newAppointment: Appointment = {
-      id: tempId,
-      title: formTitle.trim(),
-      client: formClient.trim(),
-      service: formService.trim(),
-      date: formDate,
-      time: formTime,
-      duration: formDuration,
-      status: formStatus,
-      agent: agentOptions.find(a => a.id === formAgent)?.name || 'Unassigned',
-      notes: formNotes.trim(),
-    };
-
-    setAppointments((prev) => [newAppointment, ...prev]);
-    resetForm();
-    setShowModal(false);
-    showToast('Appointment created successfully');
+    const agentName = agentOptions.find(a => a.id === formAgent)?.name || 'Unassigned';
 
     const res = await fetch('/api/appointments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        title: newAppointment.title,
-        lead_id: null,
-        service_type: newAppointment.service,
+        title: formTitle.trim(),
+        service_type: formService.trim(),
         starts_at: startsAt,
         ends_at: endsAt,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         agent_id: formAgent || null,
-        notes: newAppointment.notes,
+        notes: formNotes.trim(),
         status: formStatus,
       }),
     }).catch(() => null);
 
-    if (res) {
+    if (res && res.ok) {
       const data = await res.json();
       if (data.appointment) {
-        setAppointments(prev => prev.map(a => a.id === tempId ? { ...a, id: data.appointment.id as string } : a));
+        const newAppointment: Appointment = {
+          id: data.appointment.id as string,
+          title: formTitle.trim(),
+          client: formClient.trim(),
+          service: formService.trim(),
+          date: formDate,
+          time: formTime,
+          duration: formDuration,
+          status: formStatus,
+          agent: agentName,
+          notes: formNotes.trim(),
+          agent_id: formAgent || undefined,
+        };
+        setAppointments((prev) => [newAppointment, ...prev]);
+        resetForm();
+        setShowModal(false);
+        showToast('Appointment created successfully');
       }
+    } else {
+      showToast('Failed to create appointment. Please try again.');
     }
   }
 
