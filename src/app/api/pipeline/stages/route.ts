@@ -7,7 +7,7 @@ export const GET = withAuth(async (_req: NextRequest, ctx) => {
     const admin = createAdminClient();
 
     // Get pipeline stages
-    const { data: stages, error } = await admin
+    let { data: stages, error } = await admin
       .from('pipeline_stages')
       .select('id, name, description, position, color, is_win_stage, is_loss_stage')
       .eq('org_id', ctx.orgId)
@@ -17,8 +17,21 @@ export const GET = withAuth(async (_req: NextRequest, ctx) => {
       return NextResponse.json({ error: 'Failed to fetch stages' }, { status: 500 });
     }
 
+    // Auto-create default stages if none exist (handles case where signup RPC failed)
     if (!stages || stages.length === 0) {
-      return NextResponse.json({ stages: [] });
+      await (admin as any).rpc('create_default_pipeline', { p_org_id: ctx.orgId });
+
+      const { data: newStages } = await admin
+        .from('pipeline_stages')
+        .select('id, name, description, position, color, is_win_stage, is_loss_stage')
+        .eq('org_id', ctx.orgId)
+        .order('position', { ascending: true });
+
+      stages = newStages;
+
+      if (!stages || stages.length === 0) {
+        return NextResponse.json({ stages: [] });
+      }
     }
 
     // Get all pipeline entries for this org

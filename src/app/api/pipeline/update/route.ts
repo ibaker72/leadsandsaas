@@ -4,24 +4,30 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export const POST = withAuth(async (req: NextRequest, ctx) => {
   try {
-    const { lead_id, stage_id, estimated_value, notes, agent_id } = await req.json();
+    const { lead_id, entry_id, stage_id, estimated_value, notes, agent_id } = await req.json();
 
-    if (!lead_id) {
+    if (!lead_id && !entry_id) {
       return NextResponse.json(
-        { error: 'lead_id is required' },
+        { error: 'lead_id or entry_id is required' },
         { status: 400 }
       );
     }
 
     const admin = createAdminClient();
 
-    // Find the pipeline entry for this lead and verify org ownership
-    const { data: entry, error: entryError } = await admin
+    // Find the pipeline entry by lead_id or entry_id, verify org ownership
+    let entryQuery = admin
       .from('lead_pipeline_entries')
       .select('*')
-      .eq('lead_id', lead_id)
-      .eq('org_id', ctx.orgId)
-      .single();
+      .eq('org_id', ctx.orgId);
+
+    if (lead_id) {
+      entryQuery = entryQuery.eq('lead_id', lead_id);
+    } else {
+      entryQuery = entryQuery.eq('id', entry_id);
+    }
+
+    const { data: entry, error: entryError } = await entryQuery.single();
 
     if (entryError || !entry) {
       return NextResponse.json(
@@ -31,6 +37,7 @@ export const POST = withAuth(async (req: NextRequest, ctx) => {
     }
 
     const entryId = entry.id as string;
+    const resolvedLeadId = (lead_id || entry.lead_id) as string;
     const currentStageId = entry.stage_id as string;
 
     // If stage changed, record a transition
@@ -39,7 +46,7 @@ export const POST = withAuth(async (req: NextRequest, ctx) => {
         .from('pipeline_transitions')
         .insert({
           org_id: ctx.orgId,
-          lead_id,
+          lead_id: resolvedLeadId,
           from_stage_id: currentStageId,
           to_stage_id: stage_id,
           triggered_by: `human_agent:${ctx.userId}`,
@@ -79,7 +86,7 @@ export const POST = withAuth(async (req: NextRequest, ctx) => {
       const { error: leadError } = await admin
         .from('leads')
         .update({ agent_id })
-        .eq('id', lead_id)
+        .eq('id', resolvedLeadId)
         .eq('org_id', ctx.orgId);
 
       if (leadError) {

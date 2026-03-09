@@ -51,6 +51,7 @@ export const POST = withAuth(async (req: NextRequest, ctx) => {
       conversation_id,
       notes,
       description,
+      status,
     } = await req.json();
 
     if (!title || !starts_at || !ends_at) {
@@ -76,7 +77,7 @@ export const POST = withAuth(async (req: NextRequest, ctx) => {
         conversation_id,
         notes,
         description,
-        status: 'scheduled',
+        status: status || 'scheduled',
         is_virtual: false,
       })
       .select()

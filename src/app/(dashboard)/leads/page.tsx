@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { TopBar } from '@/components/dashboard/sidebar';
 import { Badge, Button, Card, LEAD_STATUS_VARIANT, Avatar, Modal, FormField, FormInput, FormSelect, FormTextarea, DropdownMenu } from '@/components/ui/primitives';
-import { Search, Download, Plus, ChevronLeft, ChevronRight, MoreHorizontal, Mail, Bot, Eye, Pencil, MessageSquare, ArrowRightCircle, Trash2, Users } from 'lucide-react';
+import { Search, Download, Plus, ChevronLeft, ChevronRight, MoreHorizontal, Mail, Bot, Eye, Pencil, MessageSquare, ArrowRightCircle, Trash2, Users, CheckCircle } from 'lucide-react';
 
 type Lead = {
   id: string;
@@ -57,6 +57,12 @@ export default function LeadsPage() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [detailLead, setDetailLead] = useState<Lead | null>(null);
   const [dropdownLeadId, setDropdownLeadId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }
 
   // Add lead form state
   const [formName, setFormName] = useState('');
@@ -137,7 +143,7 @@ export default function LeadsPage() {
       }),
     }).catch(() => null);
 
-    if (res) {
+    if (res && res.ok) {
       const data = await res.json();
       if (data.lead) {
         const l = data.lead;
@@ -155,10 +161,13 @@ export default function LeadsPage() {
           notes: formNotes || undefined,
           lastContact: 'Just now',
         }, ...prev]);
+        showToast('Lead added successfully');
       }
+      resetForm();
+      setAddModalOpen(false);
+    } else {
+      showToast('Failed to add lead. Please try again.');
     }
-    resetForm();
-    setAddModalOpen(false);
   }
 
   function handleExport() {
@@ -344,6 +353,17 @@ export default function LeadsPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 px-5 py-3 rounded-xl text-[13px] font-semibold animate-fade-in"
+          style={{ background: '#0b0e14', color: '#fff', boxShadow: '0 10px 40px -8px rgba(0,0,0,0.3)' }}
+        >
+          <CheckCircle size={16} style={{ color: 'var(--accent)' }} />
+          {toast}
+        </div>
+      )}
 
       {/* View Details Modal */}
       <Modal open={!!detailLead} onClose={() => setDetailLead(null)} title={detailLead ? detailLead.name : 'Lead Details'}>

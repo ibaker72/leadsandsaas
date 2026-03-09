@@ -146,15 +146,17 @@ export default function AgentsPage() {
       }),
     }).catch(() => null);
 
-    if (res) {
+    if (res && res.ok) {
       const data = await res.json();
       if (data.agent) {
         setAgents(prev => [mapAgent(data.agent), ...prev]);
         showToast(`Agent "${data.agent.name}" created successfully`);
       }
+      setModal(null);
+      resetCreateForm();
+    } else {
+      showToast('Failed to create agent. Please try again.');
     }
-    setModal(null);
-    resetCreateForm();
   }
 
   function openConfigure(agent: Agent) {

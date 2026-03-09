@@ -147,7 +147,7 @@ export default function PipelinePage() {
     fetch('/api/pipeline/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entry_id: selectedLead.entry_id, stage_id: editStage, estimated_value: newVal, notes: editNextAction }),
+      body: JSON.stringify({ lead_id: selectedLead.id, entry_id: selectedLead.entry_id, stage_id: editStage, estimated_value: newVal, notes: editNextAction }),
     }).catch(() => {});
 
     setModal(null);

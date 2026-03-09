@@ -133,7 +133,11 @@ export async function POST(req: NextRequest) {
       });
 
     // 8. Create default pipeline stages
-    await (admin as any).rpc('create_default_pipeline', { p_org_id: orgId });
+    const { error: pipelineError } = await (admin as any).rpc('create_default_pipeline', { p_org_id: orgId });
+    if (pipelineError) {
+      console.error('Pipeline stages creation failed:', pipelineError);
+      // Non-fatal: stages will be auto-created on first pipeline page visit
+    }
 
     // 9. Set JWT claim via admin auth API
     // This is the safe way to update app_metadata — no SECURITY DEFINER needed
