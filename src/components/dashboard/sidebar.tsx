@@ -94,6 +94,55 @@ function NavLink({ item, collapsed = false }: { item: NavItem; collapsed?: boole
 // Sidebar inner content (shared between desktop and mobile)
 // ---------------------------------------------------------------------------
 
+function TrialSidebarBadge() {
+  const [daysLeft, setDaysLeft] = useState<number | null>(null);
+  const [expired, setExpired] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('ls_trial_ends_at');
+    const plan = localStorage.getItem('ls_plan') || 'trial';
+    if (stored && plan === 'trial') {
+      const endsAt = new Date(stored);
+      const now = new Date();
+      const diff = Math.ceil((endsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      if (diff <= 0) {
+        setExpired(true);
+      } else {
+        setDaysLeft(diff);
+      }
+    }
+  }, []);
+
+  if (expired) {
+    return (
+      <Link
+        href="/billing"
+        className="mx-3 mb-3 flex items-center gap-2 px-3 py-2.5 rounded-lg text-[12px] font-bold transition-all hover:opacity-90"
+        style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}
+      >
+        <Zap size={14} />
+        Upgrade Now
+      </Link>
+    );
+  }
+
+  if (daysLeft === null) return null;
+
+  return (
+    <Link
+      href="/billing"
+      className="mx-3 mb-3 flex items-center gap-2 px-3 py-2.5 rounded-lg text-[12px] font-semibold transition-all hover:opacity-80"
+      style={{
+        background: daysLeft <= 3 ? 'var(--warning-soft)' : 'var(--accent-soft)',
+        color: daysLeft <= 3 ? 'var(--warning)' : 'var(--accent)',
+      }}
+    >
+      <Zap size={14} />
+      Trial: {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
+    </Link>
+  );
+}
+
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   return (
     <div className="flex flex-col h-full">
@@ -135,7 +184,10 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         ))}
       </nav>
 
-      {/* Bottom nav — shrink-0 ensures it's always visible in mobile drawer */}
+      {/* Trial badge */}
+      <TrialSidebarBadge />
+
+      {/* Bottom nav */}
       <div className="px-3 py-4 space-y-1 shrink-0" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
         {NAV_BOTTOM.map((item) => (
           <NavLink key={item.href} item={item} />
