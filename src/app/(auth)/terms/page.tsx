@@ -59,7 +59,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-[17px] font-bold mb-2" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>4. Free Trial &amp; Billing</h2>
               <p className="mb-3">
-                New accounts receive a 14-day free trial with access to core features. After the trial period:
+                New accounts receive a 7-day free trial with access to core features. After the trial period:
               </p>
               <ul className="list-disc pl-5 space-y-1.5">
                 <li>You must subscribe to a paid plan to continue using the Service</li>

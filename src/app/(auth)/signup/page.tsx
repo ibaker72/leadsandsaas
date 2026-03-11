@@ -100,7 +100,7 @@ export default function SignupPage() {
         await supabase.auth.refreshSession();
 
         // Store trial info for dashboard banner
-        const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+        const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
         localStorage.setItem('ls_trial_ends_at', trialEndsAt);
         localStorage.setItem('ls_plan', 'trial');
         localStorage.setItem('ls_onboarding_complete', 'false');
@@ -157,7 +157,7 @@ export default function SignupPage() {
 
         <div className="rounded-2xl p-6 md:p-8 animate-fade-in" style={{ background: '#fff', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
           <h2 className="text-[20px] md:text-[22px] font-bold mb-1" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>Start your free trial</h2>
-          <p className="text-[13px] md:text-[14px] mb-6" style={{ color: 'var(--text-dark-secondary)' }}>14 days free. No credit card required.</p>
+          <p className="text-[13px] md:text-[14px] mb-6" style={{ color: 'var(--text-dark-secondary)' }}>7-day free trial · No credit card required · Cancel anytime</p>
 
           {error && (
             <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-5 animate-fade-in text-[13px]" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
@@ -211,7 +211,7 @@ export default function SignupPage() {
               className="w-full py-3 rounded-xl text-[14px] font-bold transition-all flex items-center justify-center gap-2"
               style={{ background: 'var(--accent)', color: '#0b0e14', opacity: loading ? 0.6 : 1, cursor: loading ? 'wait' : 'pointer' }}>
               {loading && <Loader2 size={16} className="animate-spin" />}
-              {loading ? 'Creating account...' : 'Create Account'}
+              {loading ? 'Creating account...' : 'Start My Free Trial'}
             </button>
           </form>
 

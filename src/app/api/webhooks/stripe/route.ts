@@ -10,7 +10,11 @@ function getStripe(): Stripe {
   }
   return _stripe;
 }
-const LIMITS: Record<string, any> = { starter: { max_agents: 1, max_conversations_monthly: 500, max_users: 1 }, growth: { max_agents: 3, max_conversations_monthly: 2000, max_users: 5 }, scale: { max_agents: 10, max_conversations_monthly: 10000, max_users: 999 } };
+const LIMITS: Record<string, Record<string, number>> = {
+  starter: { max_agents: 1, max_conversations_monthly: 500, max_users: 1, max_knowledge_base_mb: 50 },
+  growth: { max_agents: 3, max_conversations_monthly: 2500, max_users: 5, max_knowledge_base_mb: 200 },
+  scale: { max_agents: 999, max_conversations_monthly: 999999, max_users: 999, max_knowledge_base_mb: 1000 },
+};
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
