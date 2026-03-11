@@ -21,7 +21,7 @@ export default function TermsOfServicePage() {
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)' }}>
               <Zap size={16} color="#0b0e14" strokeWidth={2.5} />
             </div>
-            <span className="text-[18px] font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Satoshi' }}>LeadSaaS</span>
+            <span className="text-[18px] font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Satoshi' }}>LeadsAndSaaS</span>
           </Link>
         </div>
 
@@ -34,14 +34,14 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-[17px] font-bold mb-2" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>1. Acceptance of Terms</h2>
               <p>
-                By accessing or using LeadSaaS (&quot;the Service&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms. If you do not agree, do not use the Service.
+                By accessing or using LeadsAndSaaS (&quot;the Service&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms. If you do not agree, do not use the Service.
               </p>
             </section>
 
             <section>
               <h2 className="text-[17px] font-bold mb-2" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>2. Description of Service</h2>
               <p>
-                LeadSaaS is a software-as-a-service platform that provides lead capture and management, automated and manual messaging (SMS, email, web chat), appointment scheduling, sales pipeline tracking, AI-powered conversation agents, and third-party integrations. The Service is designed for businesses in service industries including but not limited to HVAC, roofing, dental, medical spa, plumbing, and general service providers.
+                LeadsAndSaaS is a software-as-a-service platform that provides lead capture and management, automated and manual messaging (SMS, email, web chat), appointment scheduling, sales pipeline tracking, AI-powered conversation agents, and third-party integrations. The Service is designed for businesses in service industries including but not limited to HVAC, roofing, dental, medical spa, plumbing, and general service providers.
               </p>
             </section>
 
@@ -123,14 +123,14 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-[17px] font-bold mb-2" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>10. Intellectual Property</h2>
               <p>
-                The Service, including its design, code, features, and documentation, is owned by LeadSaaS and protected by intellectual property laws. Your subscription grants you a limited, non-exclusive, non-transferable license to use the Service for its intended purpose. The embeddable lead capture widget may be deployed on your websites as part of normal Service usage.
+                The Service, including its design, code, features, and documentation, is owned by LeadsAndSaaS and protected by intellectual property laws. Your subscription grants you a limited, non-exclusive, non-transferable license to use the Service for its intended purpose. The embeddable lead capture widget may be deployed on your websites as part of normal Service usage.
               </p>
             </section>
 
             <section>
               <h2 className="text-[17px] font-bold mb-2" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>11. Limitation of Liability</h2>
               <p>
-                To the maximum extent permitted by law, LeadSaaS shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or business opportunities, arising from your use of the Service. Our total liability shall not exceed the amount you paid us in the twelve months preceding the claim.
+                To the maximum extent permitted by law, LeadsAndSaaS shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or business opportunities, arising from your use of the Service. Our total liability shall not exceed the amount you paid us in the twelve months preceding the claim.
               </p>
             </section>
 
@@ -158,7 +158,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-[17px] font-bold mb-2" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>15. Contact</h2>
               <p>
-                For questions about these Terms, contact us at <a href="mailto:legal@leadsandsaas.com" className="font-medium hover:underline" style={{ color: 'var(--accent)' }}>legal@leadsandsaas.com</a>.
+                For questions about these Terms, contact us at <a href="mailto:hello@leadsandsaas.com" className="font-medium hover:underline" style={{ color: 'var(--accent)' }}>hello@leadsandsaas.com</a>.
               </p>
             </section>
           </div>
@@ -168,7 +168,7 @@ export default function TermsOfServicePage() {
         <div className="flex items-center justify-center gap-4 mt-8 text-[11px]" style={{ color: 'var(--text-muted)' }}>
           <Link href="/privacy" className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Privacy Policy</Link>
           <span>·</span>
-          <span>© {new Date().getFullYear()} LeadSaaS</span>
+          <span>© {new Date().getFullYear()} LeadsAndSaaS</span>
         </div>
       </div>
     </div>

@@ -2,14 +2,14 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import {
   Zap, MessageSquare, Users, Calendar, Bot, ArrowRight,
-  CheckCircle2, Star, BarChart3, Shield, Clock, Headphones,
+  CheckCircle2, BarChart3, Shield, Clock,
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'LeadSaaS — AI Sales Agents for Service Businesses',
+  title: 'LeadsAndSaaS — AI Sales Agents for Service Businesses',
   description: 'Capture more leads, respond instantly with AI, and book more appointments. Built for HVAC, roofing, dental, and service businesses.',
   openGraph: {
-    title: 'LeadSaaS — AI Sales Agents for Service Businesses',
+    title: 'LeadsAndSaaS — AI Sales Agents for Service Businesses',
     description: 'Capture more leads, respond instantly with AI, and book more appointments. Built for HVAC, roofing, dental, and service businesses.',
     type: 'website',
     url: 'https://leadsandsaas.com',
@@ -60,16 +60,17 @@ const STEPS = [
   { number: '03', title: 'Track everything in your dashboard', description: 'Leads, conversations, appointments, revenue — all in one place. See exactly how your sales pipeline is performing.' },
 ];
 
-const TESTIMONIALS = [
-  { name: 'Mike R.', role: 'Owner, Premier HVAC', quote: 'We booked 23 more appointments in the first month. The AI agent responds faster than any human could.', rating: 5 },
-  { name: 'Sarah T.', role: 'Practice Manager, Bright Dental', quote: 'Our no-show rate dropped 40% since we started using automated appointment reminders and follow-ups.', rating: 5 },
-  { name: 'Carlos M.', role: 'Owner, Summit Roofing', quote: 'I was losing leads every weekend. Now the AI handles everything and I wake up to booked estimates.', rating: 5 },
+const VALUE_PROPS = [
+  { icon: Clock, title: 'Stop paying for missed leads', desc: 'The average service business loses thousands per year to slow follow-up. AI agents respond in seconds, not hours.' },
+  { icon: BarChart3, title: 'Replace 3+ tools with one platform', desc: 'CRM + AI chat + scheduling + pipeline in a single dashboard. No more juggling subscriptions.' },
+  { icon: Zap, title: 'No setup headaches', desc: 'Tell us your industry, we configure everything. Your AI agent is live in under 5 minutes.' },
 ];
 
 const STATS = [
-  { value: '50,000+', label: 'Leads managed' },
-  { value: '120,000+', label: 'Conversations automated' },
-  { value: '15,000+', label: 'Appointments booked' },
+  { value: '24/7', label: 'AI Response' },
+  { value: '< 5s', label: 'Reply Time' },
+  { value: '11', label: 'Industries Supported' },
+  { value: '5 min', label: 'Setup Time' },
 ];
 
 const PLANS_PREVIEW = [
@@ -89,7 +90,7 @@ export default function HomePage() {
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
                 <Zap size={20} color="#0b0e14" strokeWidth={2.5} />
               </div>
-              <span className="text-[18px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>LeadSaaS</span>
+              <span className="text-[18px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>LeadsAndSaaS</span>
             </Link>
             <div className="hidden md:flex items-center gap-8">
               <Link href="/features" className="text-[14px] font-medium text-gray-600 hover:text-gray-900 transition-colors">Features</Link>
@@ -181,7 +182,7 @@ export default function HomePage() {
             </h2>
             <p className="text-[16px] sm:text-[18px] text-gray-600 leading-relaxed">
               78% of customers buy from the first business that responds. When leads come in at 9pm on a Saturday,
-              who&apos;s answering? LeadSaaS AI agents respond instantly — qualifying leads, answering questions,
+              who&apos;s answering? LeadsAndSaaS AI agents respond instantly — qualifying leads, answering questions,
               and booking appointments while you focus on running your business.
             </p>
           </div>
@@ -288,11 +289,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Social Proof */}
+      {/* Social Proof — Stats + Value Props */}
       <section className="py-16 sm:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Stats Bar */}
-          <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto mb-16">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto mb-16">
             {STATS.map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-[28px] sm:text-[36px] font-bold tracking-tight" style={{ color: 'var(--accent)', fontFamily: 'Satoshi' }}>{stat.value}</div>
@@ -301,21 +302,18 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Testimonials (placeholder) */}
+          {/* Value Props */}
+          <h3 className="text-[22px] sm:text-[28px] font-bold tracking-tight mb-8 text-center" style={{ fontFamily: 'Satoshi' }}>
+            Why businesses switch to LeadsAndSaaS
+          </h3>
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="bg-white rounded-2xl p-6 border border-gray-100">
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: t.rating }).map((_, i) => (
-                    <Star key={i} size={16} className="fill-amber-400 text-amber-400" />
-                  ))}
+            {VALUE_PROPS.map((vp) => (
+              <div key={vp.title} className="bg-white rounded-2xl p-6 border border-gray-100">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                  <vp.icon size={24} />
                 </div>
-                <p className="text-[14px] text-gray-700 leading-relaxed mb-4">&ldquo;{t.quote}&rdquo;</p>
-                <div>
-                  <div className="text-[14px] font-bold" style={{ fontFamily: 'Satoshi' }}>{t.name}</div>
-                  <div className="text-[12px] text-gray-500">{t.role}</div>
-                </div>
-                {/* PLACEHOLDER: These are example testimonials for design purposes */}
+                <h4 className="text-[16px] font-bold mb-2" style={{ fontFamily: 'Satoshi' }}>{vp.title}</h4>
+                <p className="text-[14px] text-gray-600 leading-relaxed">{vp.desc}</p>
               </div>
             ))}
           </div>
@@ -371,7 +369,7 @@ export default function HomePage() {
           <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-[16px] font-bold transition-all hover:opacity-90 shadow-lg" style={{ background: 'var(--accent)', color: '#0b0e14' }}>
             Start Free Trial <ArrowRight size={18} />
           </Link>
-          <p className="text-[13px] text-gray-500 mt-4">Join 500+ service businesses already using LeadSaaS</p>
+          <p className="text-[13px] text-gray-500 mt-4">Join service businesses already growing with LeadsAndSaaS</p>
         </div>
       </section>
 
@@ -384,10 +382,10 @@ export default function HomePage() {
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)' }}>
                   <Zap size={16} color="#0b0e14" strokeWidth={2.5} />
                 </div>
-                <span className="text-[16px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>LeadSaaS</span>
+                <span className="text-[16px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>LeadsAndSaaS</span>
               </Link>
               <p className="text-[13px] text-gray-500 leading-relaxed mb-4">AI sales agents for service businesses. Capture leads, automate conversations, book appointments.</p>
-              <a href="mailto:support@leadsandsaas.com" className="text-[13px] font-medium" style={{ color: 'var(--accent)' }}>support@leadsandsaas.com</a>
+              <a href="mailto:hello@leadsandsaas.com" className="text-[13px] font-medium" style={{ color: 'var(--accent)' }}>hello@leadsandsaas.com</a>
             </div>
             <div>
               <h4 className="text-[13px] font-bold uppercase tracking-wider text-gray-400 mb-4">Product</h4>
@@ -414,7 +412,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-gray-100 mt-10 pt-8 text-center">
-            <p className="text-[13px] text-gray-400">&copy; {new Date().getFullYear()} LeadSaaS. All rights reserved.</p>
+            <p className="text-[13px] text-gray-400">&copy; {new Date().getFullYear()} LeadsAndSaaS. All rights reserved.</p>
           </div>
         </div>
       </footer>

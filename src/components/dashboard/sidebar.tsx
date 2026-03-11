@@ -162,7 +162,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             className="text-[15px] font-bold tracking-tight"
             style={{ color: 'var(--text-primary)', fontFamily: 'Satoshi' }}
           >
-            LeadSaaS
+            LeadsAndSaaS
           </span>
         </div>
         {/* Mobile close button */}
@@ -349,7 +349,7 @@ export function TopBar({ title, subtitle }: { title: string; subtitle?: string }
         <div className="space-y-3 py-2">
           {[
             { label: 'Getting Started Guide', desc: 'Learn how to set up your AI agents' },
-            { label: 'API Documentation', desc: 'Integrate LeadSaaS with your tools' },
+            { label: 'API Documentation', desc: 'Integrate LeadsAndSaaS with your tools' },
             { label: 'Contact Support', desc: 'Get help from our team' },
           ].map((item) => (
             <button key={item.label} onClick={() => setModal(null)}

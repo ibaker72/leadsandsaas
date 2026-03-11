@@ -106,7 +106,7 @@ export default function UpgradePage() {
 
         <p className="text-center text-[13px]" style={{ color: 'var(--text-dark-secondary)' }}>
           Questions? Contact us at{' '}
-          <a href="mailto:support@leadsandsaas.com" className="font-medium" style={{ color: 'var(--accent)' }}>support@leadsandsaas.com</a>
+          <a href="mailto:hello@leadsandsaas.com" className="font-medium" style={{ color: 'var(--accent)' }}>hello@leadsandsaas.com</a>
         </p>
       </div>
     </div>

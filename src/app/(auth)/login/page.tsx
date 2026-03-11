@@ -53,7 +53,7 @@ export default function LoginPage() {
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent)', boxShadow: 'var(--shadow-glow)' }}>
             <Zap size={22} color="#0b0e14" strokeWidth={2.5} />
           </div>
-          <span className="text-[22px] font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Satoshi' }}>LeadSaaS</span>
+          <span className="text-[22px] font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Satoshi' }}>LeadsAndSaaS</span>
         </div>
 
         <div className="rounded-2xl p-6 md:p-8 animate-fade-in" style={{ background: '#fff', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>

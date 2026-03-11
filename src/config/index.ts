@@ -6,7 +6,7 @@ function env(key: string, fallback?: string): string {
 
 export const config = {
   app: {
-    name: 'LeadSaaS',
+    name: 'LeadsAndSaaS',
     url: env('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
     env: env('NODE_ENV', 'development') as 'development' | 'production' | 'test',
     isDev: process.env.NODE_ENV !== 'production',

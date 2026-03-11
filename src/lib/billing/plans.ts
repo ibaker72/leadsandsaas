@@ -3,7 +3,7 @@ import type { OrgPlan } from '@/lib/types/domain';
 /**
  * Central plan-to-Stripe-price mapping.
  *
- * Production Stripe price IDs for LeadSaaS plans.
+ * Production Stripe price IDs for LeadsAndSaaS plans.
  * Environment variables override these defaults if set.
  */
 
@@ -14,16 +14,16 @@ export interface PlanPricing {
 
 const PLAN_PRICES: Record<string, PlanPricing> = {
   starter: {
-    monthly: 'price_1T8ty0BAIc5bqZ87vhrLgtod',
-    annual: 'price_1T8uHbBAIc5bqZ87Hj2EXVDG',
+    monthly: 'price_1T9doWDKlxdQW6LVwMpDzqvS',
+    annual: 'price_1T9doWDKlxdQW6LVwMpDzqvS',
   },
   growth: {
-    monthly: 'price_1T8tyzBAIc5bqZ87e84BFuLF',
-    annual: 'price_1T8uJABAIc5bqZ87FtMEsmB5',
+    monthly: 'price_1T9doyDKlxdQW6LV3rR7qjsj',
+    annual: 'price_1T9doyDKlxdQW6LV3rR7qjsj',
   },
   scale: {
-    monthly: 'price_1T8tzqBAIc5bqZ87GJKtcpcM',
-    annual: 'price_1T8uKQBAIc5bqZ87V5by6O1Z',
+    monthly: 'price_1T9dpDDKlxdQW6LVhUB7vSAe',
+    annual: 'price_1T9dpDDKlxdQW6LVhUB7vSAe',
   },
 };
 

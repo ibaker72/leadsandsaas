@@ -12,7 +12,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
                 <Zap size={20} color="#0b0e14" strokeWidth={2.5} />
               </div>
-              <span className="text-[18px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>LeadSaaS</span>
+              <span className="text-[18px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>LeadsAndSaaS</span>
             </Link>
             <div className="hidden md:flex items-center gap-8">
               <Link href="/features" className="text-[14px] font-medium text-gray-600 hover:text-gray-900 transition-colors">Features</Link>
@@ -43,10 +43,10 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)' }}>
                   <Zap size={16} color="#0b0e14" strokeWidth={2.5} />
                 </div>
-                <span className="text-[16px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>LeadSaaS</span>
+                <span className="text-[16px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>LeadsAndSaaS</span>
               </Link>
               <p className="text-[13px] text-gray-500 leading-relaxed mb-4">AI sales agents for service businesses. Capture leads, automate conversations, book appointments.</p>
-              <a href="mailto:support@leadsandsaas.com" className="text-[13px] font-medium" style={{ color: 'var(--accent)' }}>support@leadsandsaas.com</a>
+              <a href="mailto:hello@leadsandsaas.com" className="text-[13px] font-medium" style={{ color: 'var(--accent)' }}>hello@leadsandsaas.com</a>
             </div>
             <div>
               <h4 className="text-[13px] font-bold uppercase tracking-wider text-gray-400 mb-4">Product</h4>
@@ -73,7 +73,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
           <div className="border-t border-gray-100 mt-10 pt-8 text-center">
-            <p className="text-[13px] text-gray-400">&copy; {new Date().getFullYear()} LeadSaaS. All rights reserved.</p>
+            <p className="text-[13px] text-gray-400">&copy; {new Date().getFullYear()} LeadsAndSaaS. All rights reserved.</p>
           </div>
         </div>
       </footer>

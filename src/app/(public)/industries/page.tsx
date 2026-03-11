@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Industries — AI Sales Agents for Service Businesses | LeadSaaS',
-  description: 'LeadSaaS provides AI-powered lead capture and appointment booking for HVAC, roofing, dental, med spa, plumbing, electrical, legal, real estate, auto repair, landscaping, and cleaning businesses.',
+  title: 'Industries — AI Sales Agents for Service Businesses | LeadsAndSaaS',
+  description: 'LeadsAndSaaS provides AI-powered lead capture and appointment booking for HVAC, roofing, dental, med spa, plumbing, electrical, legal, real estate, auto repair, landscaping, and cleaning businesses.',
 };
 
 const INDUSTRIES = [
@@ -62,9 +62,9 @@ export default function IndustriesPage() {
       <section className="py-16 sm:py-20" style={{ background: 'linear-gradient(145deg, #0b0e14 0%, #141928 50%, #1a1f2e 100%)' }}>
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-[28px] sm:text-[36px] font-bold tracking-tight mb-4 text-white" style={{ fontFamily: 'Satoshi' }}>
-            Do not see your industry?
+            Don't see your industry?
           </h2>
-          <p className="text-[16px] text-gray-400 mb-8">LeadSaaS works for any service business. Start your free trial and configure a custom AI agent.</p>
+          <p className="text-[16px] text-gray-400 mb-8">LeadsAndSaaS works for any service business. Start your free trial and configure a custom AI agent.</p>
           <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-[16px] font-bold hover:opacity-90 transition-all" style={{ background: 'var(--accent)', color: '#0b0e14' }}>
             Start Free Trial <ArrowRight size={18} />
           </Link>
