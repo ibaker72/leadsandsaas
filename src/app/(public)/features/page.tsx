@@ -8,8 +8,8 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Features — AI Lead Capture, Conversations & Scheduling | LeadSaaS',
-  description: 'Explore all LeadSaaS features: AI conversations, lead management, appointment booking, agent hub, pipeline tracking, and more.',
+  title: 'Features — AI Lead Capture, Conversations & Scheduling | LeadsAndSaaS',
+  description: 'Explore all LeadsAndSaaS features: AI conversations, lead management, appointment booking, agent hub, pipeline tracking, and more.',
 };
 
 const FEATURE_SECTIONS = [
@@ -29,7 +29,7 @@ const FEATURE_SECTIONS = [
     category: 'Lead Management',
     icon: Users,
     headline: 'Capture, track, and convert every lead',
-    description: 'From first contact to closed deal, LeadSaaS tracks every lead through your pipeline. Score leads automatically, tag them by source, and never let a hot prospect slip away.',
+    description: 'From first contact to closed deal, LeadsAndSaaS tracks every lead through your pipeline. Score leads automatically, tag them by source, and never let a hot prospect slip away.',
     features: [
       { icon: Target, title: 'Lead Scoring', desc: 'AI automatically scores leads based on engagement, intent signals, and qualification data.' },
       { icon: Database, title: 'Contact Database', desc: 'Centralized lead database with full conversation history, notes, tags, and custom fields.' },

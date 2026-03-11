@@ -3,18 +3,19 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'LeadSaaS — AI Sales Agents for Service Businesses',
-    template: '%s | LeadSaaS',
+    default: 'LeadsAndSaaS — AI Sales Agents for Service Businesses',
+    template: '%s | LeadsAndSaaS',
   },
   description: 'Capture more leads, respond instantly with AI, and book more appointments. Built for HVAC, roofing, dental, and service businesses.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://leadsandsaas.com'),
   openGraph: {
     type: 'website',
-    siteName: 'LeadSaaS',
-    title: 'LeadSaaS — AI Sales Agents for Service Businesses',
+    siteName: 'LeadsAndSaaS',
+    title: 'LeadsAndSaaS — AI Sales Agents for Service Businesses',
     description: 'Capture more leads, respond instantly with AI, and book more appointments.',
   },
   twitter: { card: 'summary_large_image' },
+  icons: { icon: '/logos/leadsandsaas-icon.svg' },
 };
 
 export const viewport: Viewport = {
@@ -26,7 +27,7 @@ export const viewport: Viewport = {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'LeadSaaS',
+  name: 'LeadsAndSaaS',
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web',
   description: 'AI-powered sales agent platform for service businesses.',

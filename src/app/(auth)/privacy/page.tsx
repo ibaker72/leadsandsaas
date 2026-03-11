@@ -21,7 +21,7 @@ export default function PrivacyPolicyPage() {
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)' }}>
               <Zap size={16} color="#0b0e14" strokeWidth={2.5} />
             </div>
-            <span className="text-[18px] font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Satoshi' }}>LeadSaaS</span>
+            <span className="text-[18px] font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Satoshi' }}>LeadsAndSaaS</span>
           </Link>
         </div>
 
@@ -34,7 +34,7 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="text-[17px] font-bold mb-2" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>1. Introduction</h2>
               <p>
-                LeadSaaS (&quot;we,&quot; &quot;our,&quot; or &quot;the Service&quot;) is a lead automation, messaging, scheduling, and business management platform. This Privacy Policy explains how we collect, use, disclose, and protect your information when you use our Service, including our website, dashboard, APIs, and embeddable widgets.
+                LeadsAndSaaS (&quot;we,&quot; &quot;our,&quot; or &quot;the Service&quot;) is a lead automation, messaging, scheduling, and business management platform. This Privacy Policy explains how we collect, use, disclose, and protect your information when you use our Service, including our website, dashboard, APIs, and embeddable widgets.
               </p>
             </section>
 
@@ -138,7 +138,7 @@ export default function PrivacyPolicyPage() {
         <div className="flex items-center justify-center gap-4 mt-8 text-[11px]" style={{ color: 'var(--text-muted)' }}>
           <Link href="/terms" className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Terms of Service</Link>
           <span>·</span>
-          <span>© {new Date().getFullYear()} LeadSaaS</span>
+          <span>© {new Date().getFullYear()} LeadsAndSaaS</span>
         </div>
       </div>
     </div>

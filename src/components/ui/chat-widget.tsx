@@ -31,7 +31,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     icon: <HelpCircle size={14} />,
     label: 'Ask a question',
-    response: "Of course! I'm here to help. What would you like to know about LeadSaaS? I can help with lead capture, messaging, appointments, pipeline setup, integrations, and more.",
+    response: "Of course! I'm here to help. What would you like to know about LeadsAndSaaS? I can help with lead capture, messaging, appointments, pipeline setup, integrations, and more.",
   },
   {
     icon: <Rocket size={14} />,
@@ -45,7 +45,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   },
 ];
 
-const GREETING = "Hi there! 👋 I'm your LeadSaaS assistant. How can I help you today?";
+const GREETING = "Hi there! 👋 I'm your LeadsAndSaaS assistant. How can I help you today?";
 
 function now() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -161,7 +161,7 @@ export function ChatWidget() {
                 </div>
                 <div>
                   <p className="text-[14px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'Satoshi' }}>
-                    LeadSaaS
+                    LeadsAndSaaS
                   </p>
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--success)' }} />
@@ -289,7 +289,7 @@ export function ChatWidget() {
                 </button>
               </div>
               <p className="text-[10.5px] mt-1.5 text-center" style={{ color: 'var(--text-dark-secondary)' }}>
-                Powered by LeadSaaS
+                Powered by LeadsAndSaaS
               </p>
             </div>
           </div>

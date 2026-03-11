@@ -145,7 +145,7 @@ export default function BillingPage() {
               </div>
               <div>
                 <h3 className="text-[15px] md:text-[16px] font-bold" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>{(PLANS.find(p => p.id === currentPlan)?.name || currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1))} Plan</h3>
-                <p className="text-[11px] md:text-[12px]" style={{ color: 'var(--text-dark-secondary)' }}>{currentPlan === 'trial' ? '14-day trial' : 'Active subscription'}</p>
+                <p className="text-[11px] md:text-[12px]" style={{ color: 'var(--text-dark-secondary)' }}>{currentPlan === 'trial' ? '7-day trial' : 'Active subscription'}</p>
               </div>
             </div>
             <div className="mb-5">
@@ -285,7 +285,7 @@ export default function BillingPage() {
               <h3 className="text-[14px] md:text-[15px] font-bold mb-1" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>Need more?</h3>
               <p className="text-[12px] md:text-[13px]" style={{ color: 'var(--text-dark-secondary)' }}>Enterprise plans with custom limits, dedicated support, and SLA guarantees.</p>
             </div>
-            <Button variant="secondary" size="md" className="shrink-0 w-full sm:w-auto" onClick={() => setErrorModal('Enterprise inquiries: Please email sales@leadsandsaas.com')}>
+            <Button variant="secondary" size="md" className="shrink-0 w-full sm:w-auto" onClick={() => setErrorModal('Enterprise inquiries: Please email hello@leadsandsaas.com')}>
               Contact Sales
             </Button>
           </div>

@@ -118,7 +118,7 @@ export default function PricingPage() {
             Simple, transparent pricing
           </h1>
           <p className="text-[16px] sm:text-[18px] text-gray-600 max-w-xl mx-auto mb-8">
-            GoHighLevel features at Pipedrive prices. Start free, upgrade when you are ready.
+            Enterprise-grade features at small business prices. Start free, upgrade when you&apos;re ready.
           </p>
 
           {/* Billing Toggle */}
