@@ -45,7 +45,6 @@ function Meter({ label, used, limit, icon }: { label: string; used: number; limi
 
 function BillingContent() {
   const searchParams = useSearchParams();
-  const [annual, setAnnual] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [errorModal, setErrorModal] = useState<string | null>(null);
@@ -89,7 +88,7 @@ function BillingContent() {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId, interval: annual ? 'annual' : 'monthly' }),
+        body: JSON.stringify({ planId, interval: 'monthly' }),
       });
       const data = await res.json();
       if (data.url) {
@@ -228,33 +227,32 @@ function BillingContent() {
             <h2 className="text-[18px] font-bold" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>Available Plans</h2>
             <p className="text-[13px] mt-0.5" style={{ color: 'var(--text-dark-secondary)' }}>Choose the plan that fits your business</p>
           </div>
-          {/* Annual/Monthly toggle */}
+          {/* Billing interval — annual coming soon */}
           <div className="flex items-center p-1 rounded-xl" style={{ background: '#f0f2f5', border: '1px solid #e8eaef' }}>
             <button
-              onClick={() => setAnnual(false)}
               className="px-4 md:px-5 py-2.5 rounded-lg text-[13px] font-semibold transition-all"
               style={{
-                background: !annual ? '#fff' : 'transparent',
-                color: !annual ? 'var(--text-dark)' : 'var(--text-dark-secondary)',
-                boxShadow: !annual ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                border: !annual ? '1px solid #e8eaef' : '1px solid transparent',
+                background: '#fff',
+                color: 'var(--text-dark)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                border: '1px solid #e8eaef',
               }}
             >
               Monthly
             </button>
             <button
-              onClick={() => setAnnual(true)}
-              className="px-4 md:px-5 py-2.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2"
+              disabled
+              className="px-4 md:px-5 py-2.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 cursor-not-allowed opacity-50"
               style={{
-                background: annual ? '#fff' : 'transparent',
-                color: annual ? 'var(--text-dark)' : 'var(--text-dark-secondary)',
-                boxShadow: annual ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                border: annual ? '1px solid #e8eaef' : '1px solid transparent',
+                background: 'transparent',
+                color: 'var(--text-dark-secondary)',
+                border: '1px solid transparent',
               }}
+              title="Annual billing coming soon"
             >
               Annual
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'var(--success-soft)', color: 'var(--success)' }}>
-                -17%
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: '#f0f2f5', color: 'var(--text-dark-secondary)' }}>
+                Soon
               </span>
             </button>
           </div>
@@ -264,7 +262,7 @@ function BillingContent() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
           {PLAN_CONFIGS.map((p) => {
             const cur = p.id === currentPlan;
-            const price = annual ? p.annualPrice : p.monthlyPrice;
+            const price = p.monthlyPrice;
             const isLoading = loading === p.id;
             return (
               <div
@@ -307,15 +305,7 @@ function BillingContent() {
                     <span className="text-[32px] md:text-[36px] font-bold tracking-tight" style={{ color: 'var(--text-dark)', fontFamily: 'Satoshi' }}>${price}</span>
                     <span className="text-[14px]" style={{ color: 'var(--text-dark-secondary)' }}>/mo</span>
                   </div>
-                  {annual && (
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-[12px] line-through" style={{ color: 'var(--text-dark-secondary)' }}>${p.monthlyPrice}/mo</span>
-                      <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded" style={{ background: 'var(--success-soft)', color: 'var(--success)' }}>
-                        Save ${(p.monthlyPrice - p.annualPrice) * 12}/yr
-                      </span>
-                    </div>
-                  )}
-                  {!annual && <div className="mb-4" />}
+                  <div className="mb-4" />
 
                   <div className="border-t pt-4 mb-5 flex-1" style={{ borderColor: '#f0f2f5' }}>
                     <div className="space-y-2.5">
@@ -367,6 +357,17 @@ function BillingContent() {
           </div>
         </div>
       </div>
+      {/* Error / info modal */}
+      <Modal open={!!errorModal} onClose={() => setErrorModal(null)} title="Billing Notice">
+        <p className="text-[14px] leading-relaxed py-2" style={{ color: 'var(--text-dark-secondary)' }}>
+          {errorModal}
+        </p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="secondary" size="sm" onClick={() => setErrorModal(null)}>
+            Close
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

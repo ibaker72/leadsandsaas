@@ -247,15 +247,13 @@ export default function HomePage() {
             </h2>
             <p className="text-[16px] sm:text-[18px] text-gray-600 max-w-lg mx-auto leading-relaxed">Three steps to start converting more leads.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {STEPS.map((step, i) => (
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto relative">
+            {/* Horizontal connector line spanning all three steps (desktop only) */}
+            <div className="hidden md:block absolute top-8 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.5) 10%, rgba(251,191,36,0.4) 50%, rgba(251,191,36,0.5) 90%, transparent 100%)' }} />
+            {STEPS.map((step) => (
               <div key={step.number} className="relative">
-                {/* Connecting line to the right (between steps) */}
-                {i < STEPS.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-full w-full h-[2px] bg-gradient-to-r from-amber-300 to-transparent -translate-x-4" />
-                )}
-                {/* Decorative line to the left of each step number */}
-                <div className="hidden md:block absolute top-8 right-full w-8 h-[2px] bg-gradient-to-l from-amber-300 to-transparent translate-x-4" />
+                {/* Step number dot accent — sits on the connector line */}
+                <div className="hidden md:block absolute top-[29px] -left-1 w-[6px] h-[6px] rounded-full" style={{ background: 'var(--accent)', opacity: 0.5 }} />
                 <div className="text-[48px] font-bold mb-4 leading-none" style={{ color: 'var(--accent)', opacity: 0.25, fontFamily: 'Satoshi' }}>{step.number}</div>
                 <h3 className="text-[18px] font-bold mb-2" style={{ fontFamily: 'Satoshi' }}>{step.title}</h3>
                 <p className="text-[14px] text-gray-600 leading-relaxed">{step.description}</p>
