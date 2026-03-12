@@ -96,7 +96,7 @@ export const PLAN_CONFIGS: PlanConfig[] = [
       leads: 2500,
       agents: 3,
       users: 5,
-      conversationsMonthly: 2000,
+      conversationsMonthly: 2500,
       knowledgeBaseMb: 200,
     },
     cta: 'Upgrade to Growth',

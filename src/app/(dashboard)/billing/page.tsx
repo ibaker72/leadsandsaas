@@ -8,10 +8,10 @@ import { PLAN_CONFIGS } from '@/lib/billing/pricing-config';
 
 /* ---------- Default limits per plan ---------- */
 const PLAN_LIMITS: Record<string, { agents: number; convos: number; users: number }> = {
-  trial: { agents: 1, convos: 500, users: 1 },
+  trial: { agents: 3, convos: 2500, users: 5 },
   starter: { agents: 1, convos: 500, users: 1 },
-  growth: { agents: 3, convos: 2000, users: 5 },
-  scale: { agents: 10, convos: 10000, users: 999 },
+  growth: { agents: 3, convos: 2500, users: 5 },
+  scale: { agents: 999, convos: 999999, users: 999 },
   enterprise: { agents: 999, convos: 999999, users: 999 },
 };
 
