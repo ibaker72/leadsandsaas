@@ -21,9 +21,10 @@ Organization → Users (RBAC) → Agents (AI) → Leads → Conversations → Me
 5. **Result-based Error Handling**: No thrown exceptions in business logic
 
 ## Billing Tiers
-- Starter ($297/mo): 1 agent, 500 convos, 1 user
-- Growth ($597/mo): 3 agents, 2K convos, 5 users
-- Scale ($1,497/mo): 10 agents, 10K convos, unlimited users
+- Starter ($29/mo): 1 agent, 500 convos, 1 user
+- Growth ($79/mo): 3 agents, 2,500 convos, 5 users
+- Scale ($149/mo): unlimited agents, unlimited convos, unlimited users
+- See `src/lib/billing/pricing-config.ts` for the single source of truth.
 
 ## Getting Started
 1. `npm install`

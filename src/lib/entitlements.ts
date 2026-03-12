@@ -63,21 +63,7 @@ export function getUpgradePlan(currentPlan: OrgPlan | string): string | null {
   }
 }
 
-export function getPlanDisplayName(plan: string): string {
-  const names: Record<string, string> = {
-    starter: 'Starter',
-    growth: 'Growth',
-    scale: 'Scale',
-    trial: 'Free Trial',
-  };
-  return names[plan] || plan;
-}
-
-export function getPlanPrice(plan: string, interval: 'monthly' | 'annual' = 'monthly'): number {
-  const prices: Record<string, { monthly: number; annual: number }> = {
-    starter: { monthly: 29, annual: 24 },
-    growth: { monthly: 79, annual: 66 },
-    scale: { monthly: 149, annual: 124 },
-  };
-  return prices[plan]?.[interval] || 0;
-}
+export {
+  getPlanDisplayName,
+  getPlanPrice,
+} from '@/lib/billing/pricing-config';

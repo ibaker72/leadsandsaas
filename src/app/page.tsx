@@ -4,6 +4,7 @@ import {
   Zap, MessageSquare, Users, Calendar, Bot, ArrowRight,
   CheckCircle2, BarChart3, Shield, Clock,
 } from 'lucide-react';
+import { PLAN_CONFIGS } from '@/lib/billing/pricing-config';
 
 export const metadata: Metadata = {
   title: 'LeadsAndSaaS — AI Sales Agents for Service Businesses',
@@ -73,12 +74,6 @@ const STATS = [
   { value: '5 min', label: 'Setup Time' },
 ];
 
-const PLANS_PREVIEW = [
-  { name: 'Starter', price: '$29', period: '/mo', description: 'For solo operators', highlight: false },
-  { name: 'Growth', price: '$79', period: '/mo', description: 'For growing teams', highlight: true },
-  { name: 'Scale', price: '$149', period: '/mo', description: 'For agencies', highlight: false },
-];
-
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
@@ -113,13 +108,13 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-amber-50/50 to-white" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-16 sm:pb-20">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 pb-16 sm:pb-20">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-50 border border-amber-200 mb-6">
-              <Zap size={14} className="text-amber-600" />
-              <span className="text-[13px] font-semibold text-amber-700">AI-powered sales for service businesses</span>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-50 border border-amber-200/60 mb-8">
+              <Zap size={13} className="text-amber-600" />
+              <span className="text-[12px] font-bold uppercase tracking-wider text-amber-700">AI-powered sales for service businesses</span>
             </div>
-            <h1 className="text-[36px] sm:text-[48px] lg:text-[60px] font-bold leading-[1.1] tracking-tight mb-6" style={{ fontFamily: 'Satoshi' }}>
+            <h1 className="text-[36px] sm:text-[52px] lg:text-[64px] font-bold leading-[1.08] tracking-tight mb-6" style={{ fontFamily: 'Satoshi' }}>
               Your AI sales agent that works{' '}
               <span className="relative">
                 <span className="relative z-10" style={{ color: 'var(--accent)' }}>24/7</span>
@@ -137,12 +132,12 @@ export default function HomePage() {
                 See Pricing
               </Link>
             </div>
-            <p className="text-[13px] text-gray-500 mt-4">7-day free trial · No credit card required · Cancel anytime</p>
+            <p className="text-[13px] text-gray-500 mt-5">7-day free trial · No credit card required · Cancel anytime</p>
           </div>
 
           {/* Hero Visual — Dashboard Preview */}
-          <div className="mt-16 max-w-5xl mx-auto">
-            <div className="rounded-2xl border border-gray-200 shadow-2xl shadow-gray-200/60 overflow-hidden bg-white">
+          <div className="mt-16 sm:mt-20 max-w-5xl mx-auto">
+            <div className="rounded-2xl border border-gray-200/80 shadow-2xl shadow-gray-200/60 overflow-hidden bg-white">
               <div className="h-8 bg-gray-100 flex items-center px-4 gap-2 border-b border-gray-200">
                 <div className="w-3 h-3 rounded-full bg-red-400" />
                 <div className="w-3 h-3 rounded-full bg-yellow-400" />
@@ -157,7 +152,7 @@ export default function HomePage() {
                     { label: 'Appts Today', value: '12', change: '+23%', color: '#10b981' },
                     { label: 'Conv. Rate', value: '34%', change: '+5%', color: '#a855f7' },
                   ].map((stat) => (
-                    <div key={stat.label} className="bg-white rounded-xl p-4 border border-gray-100">
+                    <div key={stat.label} className="bg-white rounded-xl p-4 border border-gray-100 hover:border-gray-200 transition-colors">
                       <div className="h-[3px] rounded-full mb-3" style={{ background: stat.color, width: '40px' }} />
                       <div className="text-[24px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>{stat.value}</div>
                       <div className="flex items-center justify-between mt-1">
@@ -174,10 +169,13 @@ export default function HomePage() {
       </section>
 
       {/* Problem/Solution Section */}
-      <section className="py-16 sm:py-24 bg-gray-50">
+      <section className="py-20 sm:py-28 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center mb-12">
-            <h2 className="text-[28px] sm:text-[36px] font-bold tracking-tight mb-4" style={{ fontFamily: 'Satoshi' }}>
+          <div className="max-w-3xl mx-auto text-center mb-14">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-gray-200 mb-5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">The Problem</span>
+            </div>
+            <h2 className="text-[28px] sm:text-[40px] font-bold tracking-tight mb-5" style={{ fontFamily: 'Satoshi' }}>
               Stop losing leads to slow follow-up
             </h2>
             <p className="text-[16px] sm:text-[18px] text-gray-600 leading-relaxed">
@@ -186,15 +184,15 @@ export default function HomePage() {
               and booking appointments while you focus on running your business.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-5 max-w-4xl mx-auto">
             {[
               { icon: Clock, title: 'Instant Response', desc: 'AI agents respond in seconds, not hours. Day or night, weekend or holiday.' },
               { icon: BarChart3, title: 'Never Miss a Lead', desc: 'Every inquiry gets a response. Every lead gets tracked. Nothing falls through the cracks.' },
               { icon: Shield, title: 'Built for Your Industry', desc: 'Pre-trained for HVAC, roofing, dental, and 8+ service verticals. Speaks your customers\' language.' },
             ].map((item) => (
-              <div key={item.title} className="bg-white rounded-2xl p-6 border border-gray-100">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
-                  <item.icon size={24} />
+              <div key={item.title} className="bg-white rounded-2xl p-6 border border-gray-200/80 hover:border-gray-300 hover:shadow-md transition-all">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                  <item.icon size={22} />
                 </div>
                 <h3 className="text-[16px] font-bold mb-2" style={{ fontFamily: 'Satoshi' }}>{item.title}</h3>
                 <p className="text-[14px] text-gray-600 leading-relaxed">{item.desc}</p>
@@ -205,28 +203,31 @@ export default function HomePage() {
       </section>
 
       {/* Feature Highlights */}
-      <section className="py-16 sm:py-24">
+      <section className="py-20 sm:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-[28px] sm:text-[36px] font-bold tracking-tight mb-4" style={{ fontFamily: 'Satoshi' }}>
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/60 mb-5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Platform</span>
+            </div>
+            <h2 className="text-[28px] sm:text-[40px] font-bold tracking-tight mb-4" style={{ fontFamily: 'Satoshi' }}>
               Everything you need to convert leads
             </h2>
-            <p className="text-[16px] sm:text-[18px] text-gray-600 max-w-2xl mx-auto">
+            <p className="text-[16px] sm:text-[18px] text-gray-600 max-w-2xl mx-auto leading-relaxed">
               From first contact to booked appointment — one platform handles it all.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {FEATURES.map((feature) => (
-              <div key={feature.title} className="group rounded-2xl p-6 border border-gray-100 hover:border-amber-200 hover:shadow-lg hover:shadow-amber-50 transition-all">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
-                  <feature.icon size={24} />
+              <div key={feature.title} className="group rounded-2xl p-6 border border-gray-200/80 hover:border-amber-200 hover:shadow-lg hover:shadow-amber-50/50 transition-all bg-white">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                  <feature.icon size={22} />
                 </div>
                 <h3 className="text-[16px] font-bold mb-2" style={{ fontFamily: 'Satoshi' }}>{feature.title}</h3>
                 <p className="text-[14px] text-gray-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
-          <div className="text-center mt-10">
+          <div className="text-center mt-12">
             <Link href="/features" className="inline-flex items-center gap-2 text-[14px] font-semibold hover:gap-3 transition-all" style={{ color: 'var(--accent)' }}>
               See all features <ArrowRight size={16} />
             </Link>
@@ -235,21 +236,27 @@ export default function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section className="py-16 sm:py-24 bg-gray-50">
+      <section className="py-20 sm:py-28 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-[28px] sm:text-[36px] font-bold tracking-tight mb-4" style={{ fontFamily: 'Satoshi' }}>
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-gray-200 mb-5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">How It Works</span>
+            </div>
+            <h2 className="text-[28px] sm:text-[40px] font-bold tracking-tight mb-4" style={{ fontFamily: 'Satoshi' }}>
               Up and running in minutes
             </h2>
-            <p className="text-[16px] sm:text-[18px] text-gray-600">Three steps to start converting more leads.</p>
+            <p className="text-[16px] sm:text-[18px] text-gray-600 max-w-lg mx-auto leading-relaxed">Three steps to start converting more leads.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {STEPS.map((step, i) => (
               <div key={step.number} className="relative">
+                {/* Connecting line to the right (between steps) */}
                 {i < STEPS.length - 1 && (
                   <div className="hidden md:block absolute top-8 left-full w-full h-[2px] bg-gradient-to-r from-amber-300 to-transparent -translate-x-4" />
                 )}
-                <div className="text-[48px] font-bold mb-4 leading-none" style={{ color: 'var(--accent)', opacity: 0.3, fontFamily: 'Satoshi' }}>{step.number}</div>
+                {/* Decorative line to the left of each step number */}
+                <div className="hidden md:block absolute top-8 right-full w-8 h-[2px] bg-gradient-to-l from-amber-300 to-transparent translate-x-4" />
+                <div className="text-[48px] font-bold mb-4 leading-none" style={{ color: 'var(--accent)', opacity: 0.25, fontFamily: 'Satoshi' }}>{step.number}</div>
                 <h3 className="text-[18px] font-bold mb-2" style={{ fontFamily: 'Satoshi' }}>{step.title}</h3>
                 <p className="text-[14px] text-gray-600 leading-relaxed">{step.description}</p>
               </div>
@@ -259,29 +266,32 @@ export default function HomePage() {
       </section>
 
       {/* Industries */}
-      <section className="py-16 sm:py-24">
+      <section className="py-20 sm:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-[28px] sm:text-[36px] font-bold tracking-tight mb-4" style={{ fontFamily: 'Satoshi' }}>
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/60 mb-5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Industries</span>
+            </div>
+            <h2 className="text-[28px] sm:text-[40px] font-bold tracking-tight mb-4" style={{ fontFamily: 'Satoshi' }}>
               Built for service businesses
             </h2>
-            <p className="text-[16px] sm:text-[18px] text-gray-600 max-w-2xl mx-auto">
+            <p className="text-[16px] sm:text-[18px] text-gray-600 max-w-2xl mx-auto leading-relaxed">
               Pre-configured AI agents for your industry. No generic chatbots — real sales conversations.
             </p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto">
             {INDUSTRIES.map((industry) => (
               <Link
                 key={industry.slug}
                 href={`/industries/${industry.slug}`}
-                className="group flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-amber-200 hover:bg-amber-50/50 transition-all"
+                className="group flex items-center gap-3 p-4 rounded-xl border border-gray-200/80 bg-white hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-sm transition-all"
               >
-                <span className="text-[24px]">{industry.icon}</span>
+                <span className="text-[22px]">{industry.icon}</span>
                 <span className="text-[14px] font-semibold text-gray-700 group-hover:text-gray-900">{industry.name}</span>
               </Link>
             ))}
           </div>
-          <div className="text-center mt-8">
+          <div className="text-center mt-10">
             <Link href="/industries" className="inline-flex items-center gap-2 text-[14px] font-semibold hover:gap-3 transition-all" style={{ color: 'var(--accent)' }}>
               View all industries <ArrowRight size={16} />
             </Link>
@@ -290,27 +300,29 @@ export default function HomePage() {
       </section>
 
       {/* Social Proof — Stats + Value Props */}
-      <section className="py-16 sm:py-24 bg-gray-50">
+      <section className="py-20 sm:py-28 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Stats Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto mb-16">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-4xl mx-auto mb-20">
             {STATS.map((stat) => (
               <div key={stat.label} className="text-center">
-                <div className="text-[28px] sm:text-[36px] font-bold tracking-tight" style={{ color: 'var(--accent)', fontFamily: 'Satoshi' }}>{stat.value}</div>
-                <div className="text-[13px] sm:text-[14px] text-gray-500 mt-1">{stat.label}</div>
+                <div className="text-[32px] sm:text-[40px] font-bold tracking-tight" style={{ color: 'var(--accent)', fontFamily: 'Satoshi' }}>{stat.value}</div>
+                <div className="text-[13px] sm:text-[14px] text-gray-500 font-medium mt-1">{stat.label}</div>
               </div>
             ))}
           </div>
 
           {/* Value Props */}
-          <h3 className="text-[22px] sm:text-[28px] font-bold tracking-tight mb-8 text-center" style={{ fontFamily: 'Satoshi' }}>
-            Why businesses switch to LeadsAndSaaS
-          </h3>
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h3 className="text-[24px] sm:text-[32px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>
+              Why businesses switch to LeadsAndSaaS
+            </h3>
+          </div>
+          <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
             {VALUE_PROPS.map((vp) => (
-              <div key={vp.title} className="bg-white rounded-2xl p-6 border border-gray-100">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
-                  <vp.icon size={24} />
+              <div key={vp.title} className="bg-white rounded-2xl p-6 border border-gray-200/80 hover:border-gray-300 hover:shadow-md transition-all">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                  <vp.icon size={22} />
                 </div>
                 <h4 className="text-[16px] font-bold mb-2" style={{ fontFamily: 'Satoshi' }}>{vp.title}</h4>
                 <p className="text-[14px] text-gray-600 leading-relaxed">{vp.desc}</p>
@@ -321,18 +333,21 @@ export default function HomePage() {
       </section>
 
       {/* Pricing Preview */}
-      <section className="py-16 sm:py-24">
+      <section className="py-20 sm:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-[28px] sm:text-[36px] font-bold tracking-tight mb-4" style={{ fontFamily: 'Satoshi' }}>
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/60 mb-5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Pricing</span>
+            </div>
+            <h2 className="text-[28px] sm:text-[40px] font-bold tracking-tight mb-4" style={{ fontFamily: 'Satoshi' }}>
               Simple, transparent pricing
             </h2>
-            <p className="text-[16px] sm:text-[18px] text-gray-600">Plans that grow with your business. Start free, upgrade anytime.</p>
+            <p className="text-[16px] sm:text-[18px] text-gray-600 leading-relaxed">Plans that grow with your business. Start free, upgrade anytime.</p>
           </div>
-          <div className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {PLANS_PREVIEW.map((plan) => (
-              <div key={plan.name} className={`rounded-2xl p-6 border ${plan.highlight ? 'border-amber-300 shadow-lg shadow-amber-100 ring-1 ring-amber-200' : 'border-gray-100'} bg-white relative`}>
-                {plan.highlight && (
+          <div className="grid sm:grid-cols-3 gap-5 max-w-4xl mx-auto">
+            {PLAN_CONFIGS.map((plan) => (
+              <div key={plan.name} className={`rounded-2xl p-6 border bg-white relative transition-all duration-200 hover:-translate-y-0.5 ${plan.popular ? 'border-amber-300 shadow-lg shadow-amber-100/50 ring-1 ring-amber-200' : 'border-gray-200/80 hover:border-gray-300 hover:shadow-md'}`}>
+                {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide" style={{ background: 'var(--accent)', color: '#0b0e14' }}>
                     Most Popular
                   </div>
@@ -340,16 +355,16 @@ export default function HomePage() {
                 <h3 className="text-[18px] font-bold mb-1" style={{ fontFamily: 'Satoshi' }}>{plan.name}</h3>
                 <p className="text-[13px] text-gray-500 mb-4">{plan.description}</p>
                 <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-[36px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>{plan.price}</span>
-                  <span className="text-[14px] text-gray-500">{plan.period}</span>
+                  <span className="text-[36px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi' }}>${plan.monthlyPrice}</span>
+                  <span className="text-[14px] text-gray-500">/mo</span>
                 </div>
-                <Link href="/signup" className={`w-full inline-flex items-center justify-center py-3 rounded-xl text-[14px] font-bold transition-all ${plan.highlight ? 'hover:opacity-90' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`} style={plan.highlight ? { background: 'var(--accent)', color: '#0b0e14' } : undefined}>
+                <Link href="/signup" className={`w-full inline-flex items-center justify-center py-3 rounded-xl text-[14px] font-bold transition-all ${plan.popular ? 'hover:opacity-90 shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`} style={plan.popular ? { background: 'var(--accent)', color: '#0b0e14' } : undefined}>
                   Start Free Trial
                 </Link>
               </div>
             ))}
           </div>
-          <div className="text-center mt-8">
+          <div className="text-center mt-10">
             <Link href="/pricing" className="inline-flex items-center gap-2 text-[14px] font-semibold hover:gap-3 transition-all" style={{ color: 'var(--accent)' }}>
               See full pricing comparison <ArrowRight size={16} />
             </Link>
@@ -358,23 +373,23 @@ export default function HomePage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-16 sm:py-24" style={{ background: 'linear-gradient(145deg, #0b0e14 0%, #141928 50%, #1a1f2e 100%)' }}>
+      <section className="py-20 sm:py-28" style={{ background: 'linear-gradient(145deg, #0b0e14 0%, #141928 50%, #1a1f2e 100%)' }}>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-[28px] sm:text-[40px] font-bold tracking-tight mb-4 text-white" style={{ fontFamily: 'Satoshi' }}>
+          <h2 className="text-[28px] sm:text-[44px] font-bold tracking-tight mb-5 text-white" style={{ fontFamily: 'Satoshi' }}>
             Ready to stop losing leads?
           </h2>
-          <p className="text-[16px] sm:text-[18px] text-gray-400 mb-8 max-w-lg mx-auto">
+          <p className="text-[16px] sm:text-[18px] text-gray-400 mb-10 max-w-lg mx-auto leading-relaxed">
             Start your 7-day free trial — no credit card required. Set up in minutes, start converting today.
           </p>
-          <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-[16px] font-bold transition-all hover:opacity-90 shadow-lg" style={{ background: 'var(--accent)', color: '#0b0e14' }}>
+          <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-[16px] font-bold transition-all hover:opacity-90 shadow-lg shadow-amber-500/20" style={{ background: 'var(--accent)', color: '#0b0e14' }}>
             Start Free Trial <ArrowRight size={18} />
           </Link>
-          <p className="text-[13px] text-gray-500 mt-4">Join service businesses already growing with LeadsAndSaaS</p>
+          <p className="text-[13px] text-gray-500 mt-5">Join service businesses already growing with LeadsAndSaaS</p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 py-12">
+      <footer className="bg-white border-t border-gray-100 py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="col-span-2 md:col-span-1">
@@ -388,7 +403,7 @@ export default function HomePage() {
               <a href="mailto:hello@leadsandsaas.com" className="text-[13px] font-medium" style={{ color: 'var(--accent)' }}>hello@leadsandsaas.com</a>
             </div>
             <div>
-              <h4 className="text-[13px] font-bold uppercase tracking-wider text-gray-400 mb-4">Product</h4>
+              <h4 className="text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-4">Product</h4>
               <ul className="space-y-3">
                 <li><Link href="/features" className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors">Features</Link></li>
                 <li><Link href="/pricing" className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors">Pricing</Link></li>
@@ -396,7 +411,7 @@ export default function HomePage() {
               </ul>
             </div>
             <div>
-              <h4 className="text-[13px] font-bold uppercase tracking-wider text-gray-400 mb-4">Company</h4>
+              <h4 className="text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-4">Company</h4>
               <ul className="space-y-3">
                 <li><Link href="/about" className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors">About</Link></li>
                 <li><Link href="/login" className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors">Sign In</Link></li>
@@ -404,14 +419,14 @@ export default function HomePage() {
               </ul>
             </div>
             <div>
-              <h4 className="text-[13px] font-bold uppercase tracking-wider text-gray-400 mb-4">Legal</h4>
+              <h4 className="text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-4">Legal</h4>
               <ul className="space-y-3">
                 <li><Link href="/terms" className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors">Terms of Service</Link></li>
                 <li><Link href="/privacy" className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors">Privacy Policy</Link></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-100 mt-10 pt-8 text-center">
+          <div className="border-t border-gray-100 mt-12 pt-8 text-center">
             <p className="text-[13px] text-gray-400">&copy; {new Date().getFullYear()} LeadsAndSaaS. All rights reserved.</p>
           </div>
         </div>

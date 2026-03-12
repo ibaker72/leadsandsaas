@@ -4,30 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Zap, ArrowRight, CheckCircle2, Users, MessageSquare, Calendar, AlertTriangle } from 'lucide-react';
-
-const PLANS = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 29,
-    features: ['Up to 500 leads', '1 AI sales agent', 'SMS + email + web chat', 'Appointment scheduling', '1 user seat'],
-    highlight: false,
-  },
-  {
-    id: 'growth',
-    name: 'Growth',
-    price: 79,
-    features: ['Up to 2,500 leads', '3 AI sales agents', 'Agent Hub', 'Advanced pipeline', 'Conversation analytics', '5 user seats'],
-    highlight: true,
-  },
-  {
-    id: 'scale',
-    name: 'Scale',
-    price: 149,
-    features: ['Unlimited leads', 'Unlimited AI agents', 'Custom AI training', 'API access', 'White-label widget', 'Unlimited seats'],
-    highlight: false,
-  },
-];
+import { PLAN_CONFIGS } from '@/lib/billing/pricing-config';
 
 export default function UpgradePage() {
   const router = useRouter();
@@ -69,19 +46,19 @@ export default function UpgradePage() {
 
         {/* Plan Cards */}
         <div className="grid md:grid-cols-3 gap-5 mb-8">
-          {PLANS.map((plan) => (
+          {PLAN_CONFIGS.map((plan) => (
             <div
               key={plan.id}
-              className={`rounded-2xl p-6 bg-white relative ${plan.highlight ? 'border-2 border-amber-300 shadow-lg ring-1 ring-amber-200' : 'border border-gray-200'}`}
+              className={`rounded-2xl p-6 bg-white relative ${plan.popular ? 'border-2 border-amber-300 shadow-lg ring-1 ring-amber-200' : 'border border-gray-200'}`}
             >
-              {plan.highlight && (
+              {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide" style={{ background: 'var(--accent)', color: '#0b0e14' }}>
                   Recommended
                 </div>
               )}
               <h3 className="text-[18px] font-bold mb-1" style={{ fontFamily: 'Satoshi', color: 'var(--text-dark)' }}>{plan.name}</h3>
               <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-[36px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi', color: 'var(--text-dark)' }}>${plan.price}</span>
+                <span className="text-[36px] font-bold tracking-tight" style={{ fontFamily: 'Satoshi', color: 'var(--text-dark)' }}>${plan.monthlyPrice}</span>
                 <span className="text-[14px]" style={{ color: 'var(--text-dark-secondary)' }}>/mo</span>
               </div>
               <ul className="space-y-2 mb-6">
@@ -95,8 +72,8 @@ export default function UpgradePage() {
               <button
                 onClick={() => handleUpgrade(plan.id)}
                 disabled={loading !== null}
-                className={`w-full py-3 rounded-xl text-[14px] font-bold transition-all ${plan.highlight ? 'hover:opacity-90' : 'bg-gray-100 hover:bg-gray-200'}`}
-                style={plan.highlight ? { background: 'var(--accent)', color: '#0b0e14' } : { color: 'var(--text-dark)' }}
+                className={`w-full py-3 rounded-xl text-[14px] font-bold transition-all ${plan.popular ? 'hover:opacity-90' : 'bg-gray-100 hover:bg-gray-200'}`}
+                style={plan.popular ? { background: 'var(--accent)', color: '#0b0e14' } : { color: 'var(--text-dark)' }}
               >
                 {loading === plan.id ? 'Redirecting...' : `Choose ${plan.name}`}
               </button>
