@@ -9,9 +9,11 @@ import { PLAN_CONFIGS } from '@/lib/billing/pricing-config';
 export default function UpgradePage() {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleUpgrade(planId: string) {
     setLoading(planId);
+    setError(null);
     try {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
@@ -21,8 +23,21 @@ export default function UpgradePage() {
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+        return;
+      }
+      const errMsg = (data.error as string) || (data.message as string) || '';
+      if (res.status === 403) {
+        setError('Only the account owner can manage billing.');
+      } else if (res.status === 401) {
+        setError('Your session has expired. Please refresh and try again.');
+      } else if (errMsg.includes('STRIPE_SECRET_KEY')) {
+        setError('Billing is not configured yet. Please contact support.');
+      } else {
+        setError(errMsg || 'Failed to start checkout. Please try again.');
       }
     } catch {
+      setError('Network error. Please check your connection and try again.');
+    } finally {
       setLoading(null);
     }
   }
@@ -80,6 +95,13 @@ export default function UpgradePage() {
             </div>
           ))}
         </div>
+
+        {error && (
+          <div className="mb-6 flex items-center gap-3 px-5 py-4 rounded-xl" style={{ background: 'var(--danger-soft, #fef2f2)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <AlertTriangle size={16} style={{ color: 'var(--danger, #ef4444)' }} className="shrink-0" />
+            <p className="text-[13px] font-medium" style={{ color: 'var(--danger, #ef4444)' }}>{error}</p>
+          </div>
+        )}
 
         <p className="text-center text-[13px]" style={{ color: 'var(--text-dark-secondary)' }}>
           Questions? Contact us at{' '}

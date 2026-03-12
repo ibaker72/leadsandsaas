@@ -2,10 +2,11 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Bot, Users, MessageSquare, Calendar, GitBranch,
   Settings, CreditCard, Zap, Bell, HelpCircle, Menu, X, ChevronLeft,
+  LogOut,
 } from 'lucide-react';
 import { Modal, ComingSoonContent, Button } from '@/components/ui/primitives';
 
@@ -143,6 +144,36 @@ function TrialSidebarBadge() {
   );
 }
 
+function SignOutButton() {
+  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await fetch('/api/auth/signout', { method: 'POST' });
+      router.push('/login');
+      router.refresh();
+    } catch {
+      setSigningOut(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleSignOut}
+      disabled={signingOut}
+      className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 w-full text-left group hover:bg-red-50"
+      style={{ color: 'var(--text-secondary)' }}
+    >
+      <LogOut size={20} className="group-hover:text-red-500 transition-colors" />
+      <span className="text-[13.5px] font-medium truncate group-hover:text-red-500 transition-colors">
+        {signingOut ? 'Signing out...' : 'Sign Out'}
+      </span>
+    </button>
+  );
+}
+
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   return (
     <div className="flex flex-col h-full">
@@ -192,6 +223,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         {NAV_BOTTOM.map((item) => (
           <NavLink key={item.href} item={item} />
         ))}
+        <SignOutButton />
       </div>
     </div>
   );
@@ -248,7 +280,21 @@ export function Sidebar() {
 export function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   const { setMobileOpen } = useContext(SidebarContext);
   const pathname = usePathname();
+  const router = useRouter();
   const [modal, setModal] = useState<'notifications' | 'help' | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await fetch('/api/auth/signout', { method: 'POST' });
+      router.push('/login');
+      router.refresh();
+    } catch {
+      setSigningOut(false);
+    }
+  }
 
   return (
     <>
@@ -315,11 +361,53 @@ export function TopBar({ title, subtitle }: { title: string; subtitle?: string }
           >
             <HelpCircle size={18} />
           </button>
-          <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-bold cursor-pointer hover:ring-2 hover:ring-offset-1 transition-all"
-            style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-          >
-            JD
+          <div className="relative">
+            <button
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-bold cursor-pointer hover:ring-2 hover:ring-offset-1 transition-all"
+              style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+              aria-label="User menu"
+            >
+              JD
+            </button>
+            {userMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                <div
+                  className="absolute right-0 top-full mt-2 w-48 rounded-xl py-1.5 z-50 animate-fade-in"
+                  style={{ background: '#fff', border: '1px solid #e8eaef', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}
+                >
+                  <Link
+                    href="/settings"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium transition-colors hover:bg-gray-50"
+                    style={{ color: 'var(--text-dark)' }}
+                  >
+                    <Settings size={15} />
+                    Settings
+                  </Link>
+                  <Link
+                    href="/billing"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium transition-colors hover:bg-gray-50"
+                    style={{ color: 'var(--text-dark)' }}
+                  >
+                    <CreditCard size={15} />
+                    Billing
+                  </Link>
+                  <div className="my-1 mx-3 h-px" style={{ background: '#f0f2f5' }} />
+                  <button
+                    onClick={handleSignOut}
+                    disabled={signingOut}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium transition-colors hover:bg-red-50 w-full text-left"
+                    style={{ color: 'var(--danger, #ef4444)' }}
+                  >
+                    <LogOut size={15} />
+                    {signingOut ? 'Signing out...' : 'Sign Out'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>
