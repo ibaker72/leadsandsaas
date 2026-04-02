@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
     const agentId = getStringField(agent, 'id');
     if (!agentId) return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const org = (agent as any).organizations;
     const orgId = getStringField(org, 'id');
     if (!orgId) return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
@@ -73,8 +74,10 @@ export async function POST(req: NextRequest) {
       db.from('lead_pipeline_entries').select('*, pipeline_stages(*)').eq('lead_id', leadId).maybeSingle().then(r => r.data),
     ]);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ctx: AgentContext = { organization: org, agent: agent as any, lead: lead as any, conversation: convo as any, recentMessages: msgs as any, knowledgeBase: kb as any, pipelineStages: stages as any, currentStage: (entry as any)?.pipeline_stages ?? null };
     const result = await getAgentEngine().processMessage(msgBody, ctx);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (result.ok) await new ActionExecutor({ db, agent: agent as any, lead: lead as any, conversation: convo as any, orgId }).executeAll(result.value);
 
     return new NextResponse('<Response></Response>', { headers: { 'Content-Type': 'text/xml' } });

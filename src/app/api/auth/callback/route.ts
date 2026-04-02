@@ -90,6 +90,7 @@ export async function GET(request: NextRequest) {
               console.error('Callback bootstrap - membership failed:', memberError);
             } else {
               await admin.from('user_profiles').upsert({ id: user.id, full_name: fullName.trim() });
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const { error: plErr } = await (admin as any).rpc('create_default_pipeline', { p_org_id: orgId });
               if (plErr) console.error('Callback bootstrap - pipeline failed (non-fatal):', plErr);
               await admin.auth.admin.updateUserById(user.id, {

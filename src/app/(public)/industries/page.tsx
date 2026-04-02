@@ -62,7 +62,7 @@ export default function IndustriesPage() {
       <section className="py-16 sm:py-20" style={{ background: 'linear-gradient(145deg, #0b0e14 0%, #141928 50%, #1a1f2e 100%)' }}>
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-[28px] sm:text-[36px] font-bold tracking-tight mb-4 text-white" style={{ fontFamily: 'Satoshi' }}>
-            Don't see your industry?
+            Don&apos;t see your industry?
           </h2>
           <p className="text-[16px] text-gray-400 mb-8">LeadsAndSaaS works for any service business. Start your free trial and configure a custom AI agent.</p>
           <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-[16px] font-bold hover:opacity-90 transition-all" style={{ background: 'var(--accent)', color: '#0b0e14' }}>

@@ -88,6 +88,7 @@ async function tryAutoRepair(
 
     // Non-fatal extras
     await admin.from('user_profiles').upsert({ id: userId, full_name: fullName.trim() });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (admin as any).rpc('create_default_pipeline', { p_org_id: orgId }).catch(() => {});
     await admin.auth.admin.updateUserById(userId, {
       app_metadata: { org_id: orgId, role: 'owner' },

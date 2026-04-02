@@ -7,6 +7,7 @@ export const GET = withAuth(async (_req: NextRequest, ctx) => {
     const admin = createAdminClient();
 
     // Get pipeline stages
+    // eslint-disable-next-line prefer-const
     let { data: stages, error } = await admin
       .from('pipeline_stages')
       .select('id, name, description, position, color, is_win_stage, is_loss_stage')
@@ -19,6 +20,7 @@ export const GET = withAuth(async (_req: NextRequest, ctx) => {
 
     // Auto-create default stages if none exist (handles case where signup RPC failed)
     if (!stages || stages.length === 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (admin as any).rpc('create_default_pipeline', { p_org_id: ctx.orgId });
 
       const { data: newStages } = await admin

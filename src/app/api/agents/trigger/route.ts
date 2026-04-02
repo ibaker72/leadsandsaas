@@ -43,13 +43,15 @@ export async function POST(req: NextRequest) {
       db.from('lead_pipeline_entries').select('*, pipeline_stages(*)').eq('lead_id', lead_id).maybeSingle().then(r => r.data),
     ]);
 
-    let prompt = trigger === 'new_lead_outreach' ? 'NEW lead from website. Send warm personalized first message, ask a qualifying question.'
+    const prompt = trigger === 'new_lead_outreach' ? 'NEW lead from website. Send warm personalized first message, ask a qualifying question.'
       : trigger === 'follow_up' ? `Follow-up #${step_number} of ${total_steps}. Lead hasn't responded. Try a different angle.`
       : 'Generate appropriate outreach.';
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ctx: AgentContext = { organization: org as any, agent: agent as any, lead: lead as any, conversation: convo as any, recentMessages: msgs as any, knowledgeBase: kb as any, pipelineStages: stages as any, currentStage: (entry as any)?.pipeline_stages ?? null };
     const result = await getAgentEngine().processMessage(prompt, ctx);
     if (!result.ok) return NextResponse.json({ error: result.error.message }, { status: 500 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await new ActionExecutor({ db, agent: agent as any, lead: lead as any, conversation: convo as any, orgId }).executeAll(result.value);
     return NextResponse.json({ success: true, actions: result.value.actions.length });
   } catch (e) { console.error('Trigger error:', e); return NextResponse.json({ error: 'Internal error' }, { status: 500 }); }

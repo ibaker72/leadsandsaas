@@ -56,6 +56,7 @@ export default function SignupPage() {
           data: {
             full_name: fullName.trim(),
             company_name: companyName.trim(),
+            vertical,
           },
         },
       });

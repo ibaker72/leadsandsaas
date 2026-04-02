@@ -175,9 +175,9 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const industry = INDUSTRY_DATA[slug];
-  if (!industry) return { title: 'Industry Not Found | LeadSaaS' };
+  if (!industry) return { title: 'Industry Not Found | LeadsAndSaaS' };
   return {
-    title: `AI Sales Agent for ${industry.name} Businesses | LeadSaaS`,
+    title: `AI Sales Agent for ${industry.name} Businesses | LeadsAndSaaS`,
     description: `${industry.name}-specific lead capture and appointment booking powered by AI. ${industry.subheadline}`,
   };
 }

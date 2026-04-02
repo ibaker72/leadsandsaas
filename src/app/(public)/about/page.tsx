@@ -17,7 +17,6 @@ const VALUES = [
 const TEAM_STATS = [
   { value: '24/7', label: 'AI availability' },
   { value: '11', label: 'Industries supported' },
-  { value: '24/7', label: 'AI agent availability' },
   { value: '<5s', label: 'Average response time' },
 ];
 
@@ -42,7 +41,7 @@ export default function AboutPage() {
           <h2 className="text-[24px] sm:text-[30px] font-bold tracking-tight mb-6" style={{ fontFamily: 'Satoshi' }}>Our story</h2>
           <div className="space-y-4 text-[16px] text-gray-600 leading-relaxed">
             <p>
-              Every day, thousands of service businesses lose revenue to slow follow-up. A homeowner requests an HVAC estimate at 8pm on a Saturday. By Monday morning when someone calls back, they've already hired a competitor.
+              Every day, thousands of service businesses lose revenue to slow follow-up. A homeowner requests an HVAC estimate at 8pm on a Saturday. By Monday morning when someone calls back, they&apos;ve already hired a competitor.
             </p>
             <p>
               We built LeadsAndSaaS to solve this problem. Our AI sales agents respond to every inquiry instantly — via SMS, email, and web chat. They qualify leads, answer common questions, and book appointments automatically.
